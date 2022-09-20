@@ -1,1 +1,1 @@
-# Prediction-of-commercial-insurance-payments-for-surgical-procedure-using-DataRobot
+# Prediction of Commercial Insurance Payments for Surgical Procedure Using DataRobot
