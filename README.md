@@ -6,3 +6,8 @@ Project Objective: Our goal is to improve on the previous work that has been don
 ####  Sponsor/Mentor: - Cindy Tong from Johnson & Johnson 
 ####  CA: - Cathy Li 
 ####  Instructor: - Adam Kelleher
+
+#### Prospecttive Data Sources:
+* [S0101](https://data.census.gov/cedsci/table?t=Age%20and%20Sex&g=0100000US%243100000&y=2021&tid=ACSST1Y2021.S0101) - Demographic Profile information for MSAs
+* [S1811](https://data.census.gov/cedsci/table?q=S1811&g=0100000US%243100000&tid=ACSST1Y2021.S1811) - Economic characteristics for civilian population, broken down by MSA
+* [S0201](https://data.census.gov/cedsci/table?q=foreign&g=0100000US%243100000&tid=ACSSPP1Y2021.S0201) - Selected population profile (demographic & immigration/citizenship data), broken down by MSA
