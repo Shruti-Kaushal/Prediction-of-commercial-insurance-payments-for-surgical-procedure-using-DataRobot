@@ -1,0 +1,86 @@
+---
+title: "Capstone EDA"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(kableExtra)
+```
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE}
+data <- read.csv("priv_mcare_f_pay.csv")
+```
+
+
+# Exploratory Data Analysis 
+
+To start, we wanted to look at some of the features that were helpful in predicting `priv_pay_mean` in the original model done by JnJ. First, we wanted to see how `priv_pay_mean` varied by `site`. To do this, we created a histogram faceted by site as well as a table with summary statistics by site. 
+
+```{r, echo = FALSE, message = FALSE,warning = FALSE}
+ggplot(data = data, aes(x = priv_pay_mean)) + geom_histogram(bins = 50) +
+  facet_wrap(~site) + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  labs(title = "Histogram of Private Payment Mean by Site",
+       x = "Private Payment Mean",
+       y = "Count")
+```
+
+From the histogram, we can see that there is clearly a right-skew in the data regardless of site. This is unsurprising since some procedures can be very expensive which would result in higher `priv_pay_mean`, but there isn't going to be symmetry since there is not any procedure where `priv_pay_mean` will be very negative. These histograms also show us that ASC is the least common site used for surgery, and outpatient surgeries are more common than inpatient in our data. From the distribution of the three histograms, it looks like inpatient surgeries typically have the highest `priv_pay_mean`, followed by outpatient, then ASC being the cheapest. This is what we expected since inpatient surgeries involve the patient staying overnight which leads to `priv_pay_mean` being higher typically. It also makes sense that outpatient `priv_pay_mean` would be higher than ASC `priv_pay_mean` since outpatient surgeries happen at the hospital whereas ASC procedures are at a surgery center that is not a hospital. Outpatient surgery being part of a hospital-run facility leads to higher `priv_pay_mean` usually which is what we see in the data provided by Johnson and Johnson. The table reiterates some of the points mentioned above, and also looks at medicare payments by site. The same trends we saw with `priv_pay_mean` also exist with medicare payments in our data. 
+
+```{r, echo = FALSE, message = FALSE}
+site_data <- data %>%
+  group_by(site) %>%
+  summarise(site_mean_priv_pay = mean(priv_pay_mean, na.rm = T),
+            site_median_priv_pay = median(priv_pay_mean,na.rm = T),
+            site_mean_mcare_pay = mean(mcare_pay_mean, na.rm = T),
+            site_median_mcare_pay = mean(mcare_pay_median, na.rm = T),
+            total_priv_count = sum(priv_count,na.rm = T)) %>%
+  arrange(desc(site_mean_priv_pay))
+
+site_data %>%
+  kable(align = "c", caption = "Summary Statistics by Site") %>%
+  kable_styling(position = "center", latex_options=c('striped', 'scale_down'))
+```
+
+Next, we looked at variation in payment by year since the data included 2018-2020. We did not expect much to change from year-to-year, but did expect payments to increase slightly due to inflation. From the table, both private and medicare payments have increased slightly each year from 2018 to 2020. Another interesting thing to note is that `priv_count` decreased each year in the data. It seems logical that the number of procedures would have decreased in 2020 due to COVID, but it is not as clear why there was also a decrease from 2018 to 2019.
+
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+year_data <- data %>%
+  group_by(year) %>%
+  summarise(year_mean_priv_pay = mean(priv_pay_mean, na.rm = T),
+            year_median_priv_pay = median(priv_pay_mean,na.rm = T),
+            year_mean_mcare_pay = mean(mcare_pay_mean, na.rm = T),
+            year_median_mcare_pay = mean(mcare_pay_median, na.rm = T),
+            total_priv_count = sum(priv_count,na.rm = T)) %>%
+  arrange(year_mean_priv_pay)
+
+year_data %>%
+  kable(align = "c", caption = "Summary Statistics by Year") %>%
+  kable_styling(position = "center", latex_options=c('striped', 'scale_down'))
+```
+
+
+We also wanted to look at how payment varied by group since different surgeries vary in cost, and thus also vary in payment. Looking at the table below, there are 51 different types of surgery in the data with `rtc_slap_bank` being the most common based on `priv_count`. There is large variation in average private payment by group with the lowest averaging just over \$2200 and the highest averaging just over \$85000.
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+group_data <- data %>%
+  group_by(group) %>%
+  summarise(group_mean_priv_pay = mean(priv_pay_mean, na.rm = T),
+            group_median_priv_pay = median(priv_pay_mean,na.rm = T),
+            group_mean_mcare_pay = mean(mcare_pay_mean, na.rm = T),
+            group_median_mcare_pay = mean(mcare_pay_median, na.rm = T),
+            total_priv_count = sum(priv_count,na.rm = T)) %>%
+  arrange(desc(group_mean_priv_pay))
+
+group_data %>%
+  kable(align = "c", caption = "Summary Statistics by Group") %>%
+  kable_styling(position = "center", latex_options=c('striped', 'scale_down'))
+  
+
+
+```
