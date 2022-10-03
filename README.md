@@ -15,5 +15,6 @@ Project Objective: Our goal is to improve on the previous work that has been don
 * [SAHIE](https://www.census.gov/data/datasets/time-series/demo/sahie/estimates-acs.html) - Small Area Health Insurance Estimates Census Data by State/County
 * [SAPIE](https://www.census.gov/data/datasets/2020/demo/saipe/2020-state-and-county.html) - Poverty and Income Estimates by State/County
 * [Business MSA](https://www.census.gov/data/datasets/2019/econ/cbp/2019-cbp.html) - Business pattern data at MSA level
-
+* [FRED MSA Database](https://fred.stlouisfed.org/searchresults/?st=metropolitan%20statistical%20area&t=msa%3Busa%3Bsa%3Bintermediate&rt=intermediate&ob=sr) - Multiple industry data including healthcare and hospitals data for all MSAs
+* [Income per capita](https://www.census.gov/programs-surveys/metro-micro/data/tables.html) -  Government census data for annual estimates on income per capita
 
