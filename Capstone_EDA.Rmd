@@ -84,3 +84,12 @@ group_data %>%
 
 
 ```
+
+## Looking at geographic regions
+
+Does geography seem to have an impact on insurance payouts? Let's take a look.
+
+```{r}
+
+```
+
