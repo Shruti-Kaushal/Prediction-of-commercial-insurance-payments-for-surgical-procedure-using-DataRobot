@@ -89,6 +89,7 @@ group_data %>%
 ## Looking at geographic regions
 
 Does geography seem to have an impact on insurance payouts? Let's take a look.
+First, we will look at the average private payment for tka in 2018, a group and year that is quite well-represented.
 
 ```{r,fig.height=10,fig.width=20}
 msa_geo <- read_sf("./shapefiles_cbsa", "cb_2021_us_cbsa_20m")
@@ -97,5 +98,13 @@ tka_2020_data <- data %>% filter(group == "tka" & year == 2020)
 tka_2020_data <- inner_join(tka_2020_data, msa_geo, by=c("msa" = "GEOID"))
 ggplot(data=tka_2020_data) +
   geom_sf(aes(fill=priv_pay_median,geometry=geometry))
+```
+
+```{r}
+per_capita_income_data <- read.csv("MSAs income per capita (csv).csv")
+per_capita_income_data$Per.capita.personal.income.2018 = as.integer(per_capita_income_data$Per.capita.personal.income.2018)
+per_capita_income_data <- inner_join(per_capita_income_data, msa_geo, by=c("ï..Metropolitan.Statistical.Area" = "NAME"))
+ggplot(data=per_capita_income_data) +
+  geom_sf(aes(fill=Per.capita.personal.income.2018,geometry=geometry))
 ```
 
