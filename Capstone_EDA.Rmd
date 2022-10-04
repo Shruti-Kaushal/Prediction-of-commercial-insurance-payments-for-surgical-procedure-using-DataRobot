@@ -7,6 +7,7 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(kableExtra)
+library(sf)
 ```
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE}
@@ -89,7 +90,12 @@ group_data %>%
 
 Does geography seem to have an impact on insurance payouts? Let's take a look.
 
-```{r}
-
+```{r,fig.height=10,fig.width=20}
+msa_geo <- read_sf("./shapefiles_cbsa", "cb_2021_us_cbsa_20m")
+msa_geo$GEOID = as.integer(msa_geo$GEOID)
+tka_2020_data <- data %>% filter(group == "tka" & year == 2020)
+tka_2020_data <- inner_join(tka_2020_data, msa_geo, by=c("msa" = "GEOID"))
+ggplot(data=tka_2020_data) +
+  geom_sf(aes(fill=priv_pay_median,geometry=geometry))
 ```
 
