@@ -93,18 +93,24 @@ First, we will look at the average private payment for tka in 2018, a group and 
 
 ```{r,fig.height=10,fig.width=20}
 msa_geo <- read_sf("./shapefiles_cbsa", "cb_2021_us_cbsa_20m")
+us_geo <- read_sf("./shapefiles_nation", "cb_2021_us_nation_20m")
 msa_geo$GEOID = as.integer(msa_geo$GEOID)
 tka_2020_data <- data %>% filter(group == "tka" & year == 2020)
-tka_2020_data <- inner_join(tka_2020_data, msa_geo, by=c("msa" = "GEOID"))
+tka_2020_data <- full_join(tka_2020_data, msa_geo, by=c("msa" = "GEOID"))
 ggplot(data=tka_2020_data) +
-  geom_sf(aes(fill=priv_pay_median,geometry=geometry))
+  geom_sf(data=us_geo,aes(geometry=geometry)) +
+  geom_sf(aes(fill=priv_pay_median,geometry=geometry)) +
+  coord_sf(xlim=c(-170,-70))
+  
 ```
 
-```{r}
+```{r,fig.height=10,fig.width=20}
 per_capita_income_data <- read.csv("MSAs income per capita (csv).csv")
 per_capita_income_data$Per.capita.personal.income.2018 = as.integer(per_capita_income_data$Per.capita.personal.income.2018)
-per_capita_income_data <- inner_join(per_capita_income_data, msa_geo, by=c("ï..Metropolitan.Statistical.Area" = "NAME"))
+per_capita_income_data <- full_join(per_capita_income_data, msa_geo, by=c("ï..Metropolitan.Statistical.Area" = "NAME"))
 ggplot(data=per_capita_income_data) +
-  geom_sf(aes(fill=Per.capita.personal.income.2018,geometry=geometry))
+  geom_sf(data=us_geo,aes(geometry=geometry)) +
+  geom_sf(aes(fill=Per.capita.personal.income.2018,geometry=geometry)) +
+  coord_sf(xlim=c(-170,-70))
 ```
 
