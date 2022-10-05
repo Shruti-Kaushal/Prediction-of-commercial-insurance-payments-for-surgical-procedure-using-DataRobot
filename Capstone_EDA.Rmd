@@ -114,6 +114,8 @@ ggplot(data=tka_2020_data) +
   
 ```
 
+There does not appear to be any immediately obvious geographical trend. Some large metropolitan areas appear to show evidence of higher insurance payouts, but gaps in data make interpretation difficult. Let us try visualizing per capita income across MSAs:
+
 ```{r,fig.height=10,fig.width=20}
 per_capita_income_data <- read.csv("MSAs income per capita (csv).csv")
 per_capita_income_data$Per.capita.personal.income.2018 = as.integer(per_capita_income_data$Per.capita.personal.income.2018)
@@ -124,3 +126,4 @@ ggplot(data=per_capita_income_data) +
   coord_sf(xlim=c(-170,-70),ylim = c(20,70))
 ```
 
+Even working with a relatively complete dataset, there is still a significant quantity of missing data, and observing any overarching trend appears a difficult task.
