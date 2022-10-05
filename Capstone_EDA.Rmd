@@ -12,6 +12,7 @@ library(sf)
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE}
 data <- read.csv("priv_mcare_f_pay.csv")
+hospital_data <- read.csv("Hospital_Master_Sheet.csv")
 ```
 
 
@@ -110,7 +111,8 @@ tka_2020_data <- full_join(tka_2020_data, msa_geo, by=c("msa" = "GEOID"))
 ggplot(data=tka_2020_data) +
   geom_sf(data=us_geo,aes(geometry=geometry)) +
   geom_sf(aes(fill=priv_pay_median,geometry=geometry)) +
-  coord_sf(xlim=c(-170,-70),ylim = c(20,70))
+  scale_fill_gradient(low="black", high="red") +
+  coord_sf(xlim=c(-125,-65),ylim = c(25,50))
   
 ```
 
@@ -123,7 +125,19 @@ per_capita_income_data <- full_join(per_capita_income_data, msa_geo, by=c("ï..M
 ggplot(data=per_capita_income_data) +
   geom_sf(data=us_geo,aes(geometry=geometry)) +
   geom_sf(aes(fill=Per.capita.personal.income.2018,geometry=geometry)) +
-  coord_sf(xlim=c(-170,-70),ylim = c(20,70))
+  scale_fill_gradient(low="black", high="red") +
+  coord_sf(xlim=c(-125,-65),ylim = c(25,50))
 ```
 
-Even working with a relatively complete dataset, there is still a significant quantity of missing data, and observing any overarching trend appears a difficult task.
+Even working with a relatively complete dataset, there is still a significant quantity of missing data, and observing any overarching trend appears a difficult task. Lastly, we will take a look at the number of hospitals present in each MSA.
+
+```{r,fig.height=10,fig.width=20}
+hospital_w_geo <- hospital_data %>% group_by(CBSA_CD) %>% count(name="count_of_hospitals")
+hospital_w_geo <- full_join(hospital_w_geo, msa_geo, by=c("CBSA_CD" = "GEOID"))
+ggplot(data=hospital_w_geo) +
+  geom_sf(data=us_geo,aes(geometry=geometry)) +
+  geom_sf(aes(fill=count_of_hospitals,geometry=geometry)) +
+  scale_fill_gradient(low="black", high="red") +
+  coord_sf(xlim=c(-125,-65),ylim = c(25,50))
+```
+
