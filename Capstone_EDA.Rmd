@@ -12,6 +12,9 @@ library(sf)
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE}
 data <- read.csv("priv_mcare_f_pay.csv")
+hospital_data <- read.csv("Hospital_Master_Sheet.csv")
+# CBSA Population April 1, 2020 to July 1, 2021 https://www.census.gov/data/tables/time-series/demo/popest/2020s-total-metro-and-micro-statistical-areas.html
+population_data <- read.csv("csa-est2021-pop.csv")
 ```
 
 
@@ -109,10 +112,15 @@ tka_2020_data <- data %>% filter(group == "tka" & year == 2020)
 tka_2020_data <- full_join(tka_2020_data, msa_geo, by=c("msa" = "GEOID"))
 ggplot(data=tka_2020_data) +
   geom_sf(data=us_geo,aes(geometry=geometry)) +
-  geom_sf(aes(fill=priv_pay_median,geometry=geometry)) +
-  coord_sf(xlim=c(-170,-70),ylim = c(20,70))
+  geom_sf(aes(fill=priv_pay_mean,geometry=geometry)) +
+  scale_fill_gradient(low="black", high="red") +
+  coord_sf(xlim=c(-125,-65),ylim = c(25,50))
   
 ```
+
+There does not appear to be any immediately obvious geographical trend, though it should be noted that certain geographical areas (such as Florida and Southern California) tend to have somewhat lower payments. Some large metropolitan areas on the West Coast appear to show evidence of higher insurance payouts, but gaps in data make interpretation difficult.
+
+Let us try visualizing per capita income across CBSAs:
 
 ```{r,fig.height=10,fig.width=20}
 per_capita_income_data <- read.csv("MSAs income per capita (csv).csv")
@@ -121,6 +129,50 @@ per_capita_income_data <- full_join(per_capita_income_data, msa_geo, by=c("ï..M
 ggplot(data=per_capita_income_data) +
   geom_sf(data=us_geo,aes(geometry=geometry)) +
   geom_sf(aes(fill=Per.capita.personal.income.2018,geometry=geometry)) +
-  coord_sf(xlim=c(-170,-70),ylim = c(20,70))
+  scale_fill_gradient(low="black", high="red") +
+  coord_sf(xlim=c(-125,-65),ylim = c(25,50))
 ```
 
+This map is more complete, showing all CBSAs. One key observation that can be made is that many of the CBSAs with low private insurance payouts (focus on Florida and Southern California) also appear to be associated with lower per capita income levels. Interestingly, those CBSAs with exceptionally higher than average income levels (Ex: Midland, TX in bright red) do not have corresponding higher insurance payouts.
+
+Lastly, we will take a look at the number of hospitals present in each CBSA.
+
+```{r,fig.height=10,fig.width=20}
+hospital_w_geo <- hospital_data %>% group_by(CBSA_CD) %>% count(name="count_of_hospitals")
+hospital_w_geo <- full_join(hospital_w_geo, msa_geo, by=c("CBSA_CD" = "GEOID"))
+ggplot(data=hospital_w_geo) +
+  geom_sf(data=us_geo,aes(geometry=geometry)) +
+  geom_sf(aes(fill=count_of_hospitals,geometry=geometry)) +
+  scale_fill_gradient(low="black", high="red") +
+  coord_sf(xlim=c(-125,-65),ylim = c(25,50))
+```
+
+In this map, we see an issue. CBSAs are not necessarily uniform in size, either in terms of population or area. We observe that many of the CBSAs with larger numbers of hospitals are the CBSAs which are largest geographically.
+
+Let's look at a 2021 population view before updating this visual to reflect per capita hospital numbers.
+
+```{r,fig.height=10,fig.width=20}
+population_data$Population.Estimate..as.of.July.1..2021 = as.integer(population_data$Population.Estimate..as.of.July.1..2021)
+pop_w_geo <- full_join(population_data, hospital_w_geo, by=c("ï..Geographic.Area" = "NAME"))
+ggplot(data=pop_w_geo) +
+  geom_sf(data=us_geo,aes(geometry=geometry)) +
+  geom_sf(aes(fill=Population.Estimate..as.of.July.1..2021,geometry=geometry)) +
+  scale_fill_gradient(low="black", high="red") +
+  coord_sf(xlim=c(-125,-65),ylim = c(25,50))
+```
+
+With this view, we can also see that the larger MSAs observed before tend also to have larger populations, though there are some smaller MSAs where this does not hold (Ex: NYC area).
+
+We now look at hospitals per capita:
+
+```{r,fig.height=10,fig.width=20}
+pop_w_geo <- full_join(population_data, hospital_w_geo, by=c("ï..Geographic.Area" = "NAME"))
+pop_w_geo$per_capita_hospitals = pop_w_geo$count_of_hospitals / pop_w_geo$Population.Estimate..as.of.July.1..2021
+ggplot(data=pop_w_geo) +
+  geom_sf(data=us_geo,aes(geometry=geometry)) +
+  geom_sf(aes(fill=per_capita_hospitals,geometry=geometry)) +
+  scale_fill_gradient(low="black", high="red") +
+  coord_sf(xlim=c(-125,-65),ylim = c(25,50))
+```
+
+We observe some previously unobserved patterns in the Midwest, which exhibits some elevated hospital counts, per capita. Notably, the some areas of Southern California and Florida show low numbers of hospitals per capita. Whether or not this is related to our observed insurance payment patterns remains to be seen.
