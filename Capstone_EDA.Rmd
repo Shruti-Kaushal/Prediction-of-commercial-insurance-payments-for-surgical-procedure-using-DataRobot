@@ -40,6 +40,9 @@ site_data <- data %>%
             total_priv_count = sum(priv_count,na.rm = T)) %>%
   arrange(desc(site_mean_priv_pay))
 
+ggplot(data = site_data, aes(x = reorder(site,-site_mean_priv_pay), y = site_mean_priv_pay)) + 
+  geom_col() + labs(title = "Mean Private Payout by Site", x = "Site", y = "Mean Private Payout ($)")
+
 site_data %>%
   kable(align = "c", caption = "Summary Statistics by Site") %>%
   kable_styling(position = "center", latex_options=c('striped', 'scale_down'))
@@ -59,6 +62,9 @@ year_data <- data %>%
             total_priv_count = sum(priv_count,na.rm = T)) %>%
   arrange(year_mean_priv_pay)
 
+ggplot(data = year_data, aes(x = year, y = year_mean_priv_pay)) + 
+  geom_col() + labs(title = "Mean Private Payout by Year", x = "Year", y = "Mean Private Payout ($)")
+
 year_data %>%
   kable(align = "c", caption = "Summary Statistics by Year") %>%
   kable_styling(position = "center", latex_options=c('striped', 'scale_down'))
@@ -77,6 +83,10 @@ group_data <- data %>%
             group_median_mcare_pay = mean(mcare_pay_median, na.rm = T),
             total_priv_count = sum(priv_count,na.rm = T)) %>%
   arrange(desc(group_mean_priv_pay))
+
+ggplot(data = group_data, aes(x = reorder(group,-group_mean_priv_pay), y = group_mean_priv_pay)) + 
+  geom_col() + labs(title = "Mean Private Payout by Group", x = "Group", y = "Mean Private Payout ($)") +
+  theme(axis.text.x = element_text(angle = 90))
 
 group_data %>%
   kable(align = "c", caption = "Summary Statistics by Group") %>%
