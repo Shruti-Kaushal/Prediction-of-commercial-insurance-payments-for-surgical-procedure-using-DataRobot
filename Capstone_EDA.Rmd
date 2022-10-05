@@ -100,7 +100,7 @@ tka_2020_data <- full_join(tka_2020_data, msa_geo, by=c("msa" = "GEOID"))
 ggplot(data=tka_2020_data) +
   geom_sf(data=us_geo,aes(geometry=geometry)) +
   geom_sf(aes(fill=priv_pay_median,geometry=geometry)) +
-  coord_sf(xlim=c(-170,-70))
+  coord_sf(xlim=c(-170,-70),ylim = c(20,70))
   
 ```
 
@@ -111,6 +111,6 @@ per_capita_income_data <- full_join(per_capita_income_data, msa_geo, by=c("ï..M
 ggplot(data=per_capita_income_data) +
   geom_sf(data=us_geo,aes(geometry=geometry)) +
   geom_sf(aes(fill=Per.capita.personal.income.2018,geometry=geometry)) +
-  coord_sf(xlim=c(-170,-70))
+  coord_sf(xlim=c(-170,-70),ylim = c(20,70))
 ```
 
