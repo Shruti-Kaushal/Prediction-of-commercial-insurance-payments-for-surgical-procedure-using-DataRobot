@@ -1,4 +1,5 @@
 # Prediction of Commercial Insurance Payments for Surgical Procedure Using DataRobot
+
 Project Objective: Our goal is to improve on the previous work that has been done by Johnson and Johnson in terms of predicting commerical insurance payments for surgical procedures. J&J used DataRobot to approach this problem initially, and the result was a Gradient Boosting on ElasticNet model. Our objective is to create a model that has equivalent or better accuracy than their original model while also providing better flexibility and visibility. Using DataRobot prevented the original model from being very flexible, so we are looking to create additional flexibility in ways like setting limitations on the target variable.
 
 
@@ -17,4 +18,5 @@ Project Objective: Our goal is to improve on the previous work that has been don
 * [Business MSA](https://www.census.gov/data/datasets/2019/econ/cbp/2019-cbp.html) - Business pattern data at MSA level
 * [FRED MSA Database](https://fred.stlouisfed.org/searchresults/?st=metropolitan%20statistical%20area&t=msa%3Busa%3Bsa%3Bintermediate&rt=intermediate&ob=sr) - Multiple industry data including healthcare and hospitals data for all MSAs
 * [Income per capita](https://www.census.gov/programs-surveys/metro-micro/data/tables.html) -  Government census data for annual estimates on income per capita
+
 
