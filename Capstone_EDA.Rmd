@@ -15,6 +15,8 @@ data <- read.csv("priv_mcare_f_pay.csv")
 hospital_data <- read.csv("Hospital_Master_Sheet.csv")
 # CBSA Population April 1, 2020 to July 1, 2021 https://www.census.gov/data/tables/time-series/demo/popest/2020s-total-metro-and-micro-statistical-areas.html
 population_data <- read.csv("csa-est2021-pop.csv")
+# Demographic Information: 2021 (2020 is missing from survey) https://data.census.gov/cedsci/table?t=Age%20and%20Sex&g=0100000US%243100000&y=2021&tid=ACSST1Y2021.S0101
+age_sex_data <- read.csv("Age_Sex_Data/ACSST1Y2021.S0101-Data.csv")
 ```
 
 
@@ -99,10 +101,34 @@ group_data %>%
 
 ```
 
+## Potential Dataset Expansion - Age and Sex Demographics Data
+
+One area of interest to our analysis is how we can best leverage our data. Two facets of this are population age and sex demographic information, also obtained from the Census Bureau. We will look at the average private payment for tka in 2020, a group and year that is quite well-represented.
+
+```{r,fig.height=10,fig.width=20}
+tka_2020_data <- data %>% filter(group == "tka" & year == 2020)
+tka_2020_data <- inner_join(tka_2020_data, age_sex_data, by=c("CBSA_NAME" = "NAME"))
+ggplot(data=tka_2020_data) +
+  geom_point(aes(x=Estimate..Total..Total.population..SUMMARY.INDICATORS..Median.age..years., y=priv_pay_mean))
+
+cor(x=tka_2020_data$Estimate..Total..Total.population..SUMMARY.INDICATORS..Median.age..years., y=tka_2020_data$priv_pay_mean, use="complete.obs")
+```
+
+```{r,fig.height=10,fig.width=20}
+ggplot(data=tka_2020_data) +
+  geom_point(aes(x=Estimate..Total..Total.population..SUMMARY.INDICATORS..Sex.ratio..males.per.100.females., y=priv_pay_mean))
+
+cor(x=tka_2020_data$Estimate..Total..Total.population..SUMMARY.INDICATORS..Sex.ratio..males.per.100.females., y=tka_2020_data$priv_pay_mean, use="complete.obs")
+```
+```{r}
+
+```
+
+
 ## Looking at geographic regions
 
 Does geography seem to have an impact on insurance payouts? Let's take a look.
-First, we will look at the average private payment for tka in 2018, a group and year that is quite well-represented.
+First, we will look at the average private payment for tka in 2020, a group and year that is quite well-represented.
 
 ```{r,fig.height=10,fig.width=20}
 msa_geo <- read_sf("./shapefiles_cbsa", "cb_2021_us_cbsa_20m")
