@@ -12,6 +12,11 @@ library(sf)
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE}
 data <- read.csv("priv_mcare_f_pay.csv")
+hospital_data <- read.csv("Hospital_Master_Sheet.csv")
+# CBSA Population April 1, 2020 to July 1, 2021 https://www.census.gov/data/tables/time-series/demo/popest/2020s-total-metro-and-micro-statistical-areas.html
+population_data <- read.csv("csa-est2021-pop.csv")
+# Demographic Information: 2021 (2020 is missing from survey) https://data.census.gov/cedsci/table?t=Age%20and%20Sex&g=0100000US%243100000&y=2021&tid=ACSST1Y2021.S0101
+age_sex_data <- read.csv("Age_Sex_Data/ACSST1Y2021.S0101-Data.csv")
 ```
 
 
@@ -96,10 +101,34 @@ group_data %>%
 
 ```
 
+## Potential Dataset Expansion - Age and Sex Demographics Data
+
+One area of interest to our analysis is how we can best leverage our data. Two facets of this are population age and sex demographic information, also obtained from the Census Bureau. We will look at the average private payment for tka in 2020, a group and year that is quite well-represented.
+
+```{r,fig.height=10,fig.width=20}
+tka_2020_data <- data %>% filter(group == "tka" & year == 2020)
+tka_2020_data <- inner_join(tka_2020_data, age_sex_data, by=c("CBSA_NAME" = "NAME"))
+ggplot(data=tka_2020_data) +
+  geom_point(aes(x=Estimate..Total..Total.population..SUMMARY.INDICATORS..Median.age..years., y=priv_pay_mean))
+
+cor(x=tka_2020_data$Estimate..Total..Total.population..SUMMARY.INDICATORS..Median.age..years., y=tka_2020_data$priv_pay_mean, use="complete.obs")
+```
+
+```{r,fig.height=10,fig.width=20}
+ggplot(data=tka_2020_data) +
+  geom_point(aes(x=Estimate..Total..Total.population..SUMMARY.INDICATORS..Sex.ratio..males.per.100.females., y=priv_pay_mean))
+
+cor(x=tka_2020_data$Estimate..Total..Total.population..SUMMARY.INDICATORS..Sex.ratio..males.per.100.females., y=tka_2020_data$priv_pay_mean, use="complete.obs")
+```
+```{r}
+
+```
+
+
 ## Looking at geographic regions
 
 Does geography seem to have an impact on insurance payouts? Let's take a look.
-First, we will look at the average private payment for tka in 2018, a group and year that is quite well-represented.
+First, we will look at the average private payment for tka in 2020, a group and year that is quite well-represented.
 
 ```{r,fig.height=10,fig.width=20}
 msa_geo <- read_sf("./shapefiles_cbsa", "cb_2021_us_cbsa_20m")
@@ -109,10 +138,15 @@ tka_2020_data <- data %>% filter(group == "tka" & year == 2020)
 tka_2020_data <- full_join(tka_2020_data, msa_geo, by=c("msa" = "GEOID"))
 ggplot(data=tka_2020_data) +
   geom_sf(data=us_geo,aes(geometry=geometry)) +
-  geom_sf(aes(fill=priv_pay_median,geometry=geometry)) +
-  coord_sf(xlim=c(-170,-70),ylim = c(20,70))
+  geom_sf(aes(fill=priv_pay_mean,geometry=geometry)) +
+  scale_fill_gradient(low="black", high="red") +
+  coord_sf(xlim=c(-125,-65),ylim = c(25,50))
   
 ```
+
+There does not appear to be any immediately obvious geographical trend, though it should be noted that certain geographical areas (such as Florida and Southern California) tend to have somewhat lower payments. Some large metropolitan areas on the West Coast appear to show evidence of higher insurance payouts, but gaps in data make interpretation difficult.
+
+Let us try visualizing per capita income across CBSAs:
 
 ```{r,fig.height=10,fig.width=20}
 per_capita_income_data <- read.csv("MSAs income per capita (csv).csv")
@@ -121,9 +155,6 @@ per_capita_income_data <- full_join(per_capita_income_data, msa_geo, by=c("Metro
 ggplot(data=per_capita_income_data) +
   geom_sf(data=us_geo,aes(geometry=geometry)) +
   geom_sf(aes(fill=Per.capita.personal.income.2018,geometry=geometry)) +
-<<<<<<< Updated upstream
-  coord_sf(xlim=c(-170,-70),ylim = c(20,70))
-=======
   scale_fill_gradient(low="black", high="red") +
   coord_sf(xlim=c(-125,-65),ylim = c(25,50))
 ```
@@ -148,7 +179,8 @@ Let's look at a 2021 population view before updating this visual to reflect per 
 
 ```{r,fig.height=10,fig.width=20}
 population_data$Population.Estimate..as.of.July.1..2021 = as.integer(population_data$Population.Estimate..as.of.July.1..2021)
-pop_w_geo <- full_join(population_data, hospital_w_geo, by=c("Geographic.Area" = "NAME"))
+
+pop_w_geo <- full_join(population_data, hospital_w_geo, by=c("ï..Geographic.Area" = "NAME"))
 ggplot(data=pop_w_geo) +
   geom_sf(data=us_geo,aes(geometry=geometry)) +
   geom_sf(aes(fill=Population.Estimate..as.of.July.1..2021,geometry=geometry)) +
@@ -161,13 +193,16 @@ With this view, we can also see that the larger MSAs observed before tend also t
 We now look at hospitals per capita:
 
 ```{r,fig.height=10,fig.width=20}
-pop_w_geo <- full_join(population_data, hospital_w_geo, by=c("Geographic.Area" = "NAME"))
+
+pop_w_geo <- full_join(population_data, hospital_w_geo, by=c("ï..Geographic.Area" = "NAME"))
 pop_w_geo$per_capita_hospitals = pop_w_geo$count_of_hospitals / pop_w_geo$Population.Estimate..as.of.July.1..2021
 ggplot(data=pop_w_geo) +
   geom_sf(data=us_geo,aes(geometry=geometry)) +
   geom_sf(aes(fill=per_capita_hospitals,geometry=geometry)) +
   scale_fill_gradient(low="black", high="red") +
   coord_sf(xlim=c(-125,-65),ylim = c(25,50))
->>>>>>> Stashed changes
-```
 
+=======
+
+
+We observe some previously unobserved patterns in the Midwest, which exhibits some elevated hospital counts, per capita. Notably, the some areas of Southern California and Florida show low numbers of hospitals per capita. Whether or not this is related to our observed insurance payment patterns remains to be seen.
