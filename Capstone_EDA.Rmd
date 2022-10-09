@@ -1,0 +1,173 @@
+---
+title: "Capstone EDA"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(kableExtra)
+library(sf)
+```
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE}
+data <- read.csv("priv_mcare_f_pay.csv")
+```
+
+
+# Exploratory Data Analysis 
+
+To start, we wanted to look at some of the features that were helpful in predicting `priv_pay_median` in the original model done by JnJ. First, we wanted to see how `priv_pay_median` varied by `site`. To do this, we created a histogram faceted by site as well as a table with summary statistics by site. 
+
+```{r, echo = FALSE, message = FALSE,warning = FALSE}
+ggplot(data = data, aes(x = priv_pay_median)) + geom_histogram(bins = 50) +
+  facet_wrap(~site) + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  labs(title = "Histogram of Private Payment Median by Site",
+       x = "Private Payment Median",
+       y = "Count")
+```
+
+From the histogram, we can see that there is clearly a right-skew in the data regardless of site. This is unsurprising since some procedures can be very expensive which would result in higher `priv_pay_median`, but there isn't going to be symmetry since there is not any procedure where `priv_pay_median` will be very negative. These histograms also show us that ASC is the least common site used for surgery, and outpatient surgeries are more common than inpatient in our data. From the distribution of the three histograms, it looks like inpatient surgeries typically have the highest `priv_pay_median`, followed by outpatient, then ASC being the cheapest. This is what we expected since inpatient surgeries involve the patient staying overnight which leads to `priv_pay_median` being higher typically. It also makes sense that outpatient `priv_pay_median` would be higher than ASC `priv_pay_median` since outpatient surgeries happen at the hospital whereas ASC procedures are at a surgery center that is not a hospital. Outpatient surgery being part of a hospital-run facility leads to higher `priv_pay_median` usually which is what we see in the data provided by Johnson and Johnson. The table reiterates some of the points mentioned above, and also looks at medicare payments by site. The same trends we saw with `priv_pay_median` also exist with medicare payments in our data. 
+
+```{r, echo = FALSE, message = FALSE}
+site_data <- data %>%
+  group_by(site) %>%
+  summarise(site_mean_priv_pay = mean(priv_pay_median, na.rm = T),
+            site_median_priv_pay = median(priv_pay_median,na.rm = T),
+            site_mean_mcare_pay = mean(mcare_pay_median, na.rm = T),
+            site_median_mcare_pay = mean(mcare_pay_median, na.rm = T),
+            total_priv_count = sum(priv_count,na.rm = T)) %>%
+  arrange(desc(site_mean_priv_pay))
+
+ggplot(data = site_data, aes(x = reorder(site,-site_median_priv_pay), y = site_median_priv_pay)) + 
+  geom_col() + labs(title = "Median Private Payout by Site", x = "Site", y = "Median Private Payout ($)")
+
+site_data %>%
+  kable(align = "c", caption = "Summary Statistics by Site") %>%
+  kable_styling(position = "center", latex_options=c('striped', 'scale_down'))
+```
+
+Next, we looked at variation in payment by year since the data included 2018-2020. We did not expect much to change from year-to-year, but did expect payments to increase slightly due to inflation. From the table, both private and medicare payments have increased slightly each year from 2018 to 2020. Another interesting thing to note is that `priv_count` decreased each year in the data. It seems logical that the number of procedures would have decreased in 2020 due to COVID, but it is not as clear why there was also a decrease from 2018 to 2019.
+
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+year_data <- data %>%
+  group_by(year) %>%
+  summarise(year_mean_priv_pay = mean(priv_pay_median, na.rm = T),
+            year_median_priv_pay = median(priv_pay_median,na.rm = T),
+            year_mean_mcare_pay = mean(mcare_pay_median, na.rm = T),
+            year_median_mcare_pay = median(mcare_pay_median, na.rm = T),
+            total_priv_count = sum(priv_count,na.rm = T)) %>%
+  arrange(year_mean_priv_pay)
+
+ggplot(data = year_data, aes(x = year, y = year_median_priv_pay)) + 
+  geom_col() + labs(title = "Median Private Payout by Year", x = "Year", y = "Median Private Payout ($)")
+
+year_data %>%
+  kable(align = "c", caption = "Summary Statistics by Year") %>%
+  kable_styling(position = "center", latex_options=c('striped', 'scale_down'))
+```
+
+
+We also wanted to look at how payment varied by group since different surgeries vary in cost, and thus also vary in payment. Looking at the table below, there are 51 different types of surgery in the data with `rtc_slap_bank` being the most common based on `priv_count`. There is large variation in average private payment by group with the lowest averaging just over \$2100 and the highest averaging just over \$83000.
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+
+group_data <- data %>%
+  group_by(group) %>%
+  summarise(group_mean_priv_pay = mean(priv_pay_median, na.rm = T),
+            group_median_priv_pay = median(priv_pay_median,na.rm = T),
+            group_mean_mcare_pay = mean(mcare_pay_median, na.rm = T),
+            group_median_mcare_pay = median(mcare_pay_median, na.rm = T),
+            total_priv_count = sum(priv_count,na.rm = T)) %>%
+  arrange(desc(group_mean_priv_pay))
+
+ggplot(data = group_data, aes(x = reorder(group,-group_median_priv_pay), y = group_median_priv_pay)) + 
+  geom_col() + labs(title = "Median Private Payout by Group", x = "Group", y = "Median Private Payout ($)") +
+  theme(axis.text.x = element_text(angle = 90))
+
+group_data %>%
+  kable(align = "c", caption = "Summary Statistics by Group") %>%
+  kable_styling(position = "center", latex_options=c('striped', 'scale_down'))
+  
+
+
+```
+
+## Looking at geographic regions
+
+Does geography seem to have an impact on insurance payouts? Let's take a look.
+First, we will look at the average private payment for tka in 2018, a group and year that is quite well-represented.
+
+```{r,fig.height=10,fig.width=20}
+msa_geo <- read_sf("./shapefiles_cbsa", "cb_2021_us_cbsa_20m")
+us_geo <- read_sf("./shapefiles_nation", "cb_2021_us_nation_20m")
+msa_geo$GEOID = as.integer(msa_geo$GEOID)
+tka_2020_data <- data %>% filter(group == "tka" & year == 2020)
+tka_2020_data <- full_join(tka_2020_data, msa_geo, by=c("msa" = "GEOID"))
+ggplot(data=tka_2020_data) +
+  geom_sf(data=us_geo,aes(geometry=geometry)) +
+  geom_sf(aes(fill=priv_pay_median,geometry=geometry)) +
+  coord_sf(xlim=c(-170,-70),ylim = c(20,70))
+  
+```
+
+```{r,fig.height=10,fig.width=20}
+per_capita_income_data <- read.csv("MSAs income per capita (csv).csv")
+per_capita_income_data$Per.capita.personal.income.2018 = as.integer(per_capita_income_data$Per.capita.personal.income.2018)
+per_capita_income_data <- full_join(per_capita_income_data, msa_geo, by=c("Metropolitan.Statistical.Area" = "NAME"))
+ggplot(data=per_capita_income_data) +
+  geom_sf(data=us_geo,aes(geometry=geometry)) +
+  geom_sf(aes(fill=Per.capita.personal.income.2018,geometry=geometry)) +
+<<<<<<< Updated upstream
+  coord_sf(xlim=c(-170,-70),ylim = c(20,70))
+=======
+  scale_fill_gradient(low="black", high="red") +
+  coord_sf(xlim=c(-125,-65),ylim = c(25,50))
+```
+
+This map is more complete, showing all CBSAs. One key observation that can be made is that many of the CBSAs with low private insurance payouts (focus on Florida and Southern California) also appear to be associated with lower per capita income levels. Interestingly, those CBSAs with exceptionally higher than average income levels (Ex: Midland, TX in bright red) do not have corresponding higher insurance payouts.
+
+Lastly, we will take a look at the number of hospitals present in each CBSA.
+
+```{r,fig.height=10,fig.width=20}
+hospital_w_geo <- hospital_data %>% group_by(CBSA_CD) %>% count(name="count_of_hospitals")
+hospital_w_geo <- full_join(hospital_w_geo, msa_geo, by=c("CBSA_CD" = "GEOID"))
+ggplot(data=hospital_w_geo) +
+  geom_sf(data=us_geo,aes(geometry=geometry)) +
+  geom_sf(aes(fill=count_of_hospitals,geometry=geometry)) +
+  scale_fill_gradient(low="black", high="red") +
+  coord_sf(xlim=c(-125,-65),ylim = c(25,50))
+```
+
+In this map, we see an issue. CBSAs are not necessarily uniform in size, either in terms of population or area. We observe that many of the CBSAs with larger numbers of hospitals are the CBSAs which are largest geographically.
+
+Let's look at a 2021 population view before updating this visual to reflect per capita hospital numbers.
+
+```{r,fig.height=10,fig.width=20}
+population_data$Population.Estimate..as.of.July.1..2021 = as.integer(population_data$Population.Estimate..as.of.July.1..2021)
+pop_w_geo <- full_join(population_data, hospital_w_geo, by=c("Geographic.Area" = "NAME"))
+ggplot(data=pop_w_geo) +
+  geom_sf(data=us_geo,aes(geometry=geometry)) +
+  geom_sf(aes(fill=Population.Estimate..as.of.July.1..2021,geometry=geometry)) +
+  scale_fill_gradient(low="black", high="red") +
+  coord_sf(xlim=c(-125,-65),ylim = c(25,50))
+```
+
+With this view, we can also see that the larger MSAs observed before tend also to have larger populations, though there are some smaller MSAs where this does not hold (Ex: NYC area).
+
+We now look at hospitals per capita:
+
+```{r,fig.height=10,fig.width=20}
+pop_w_geo <- full_join(population_data, hospital_w_geo, by=c("Geographic.Area" = "NAME"))
+pop_w_geo$per_capita_hospitals = pop_w_geo$count_of_hospitals / pop_w_geo$Population.Estimate..as.of.July.1..2021
+ggplot(data=pop_w_geo) +
+  geom_sf(data=us_geo,aes(geometry=geometry)) +
+  geom_sf(aes(fill=per_capita_hospitals,geometry=geometry)) +
+  scale_fill_gradient(low="black", high="red") +
+  coord_sf(xlim=c(-125,-65),ylim = c(25,50))
+>>>>>>> Stashed changes
+```
+
