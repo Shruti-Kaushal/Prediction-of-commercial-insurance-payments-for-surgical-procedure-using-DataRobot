@@ -1,13 +1,13 @@
 ---
-title: "Missing Value Analysis"
-output: pdf_document
+output:
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r, echo = FALSE, message = FALSE, warning = FALSE, fig.height = 6, fig.width = 8}
+```{r, echo = FALSE, message = FALSE, warning = FALSE, fig.height = 10, fig.width = 8}
 
 library(tidyverse)
 library(patchwork)
