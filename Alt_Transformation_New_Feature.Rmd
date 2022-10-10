@@ -9,6 +9,7 @@ output: pdf_document
 library(tidyverse)
 library(caret)
 library(MLmetrics)
+library(rpart)
 ```
 
 # Concept
@@ -122,6 +123,8 @@ untransformed_dev_set <- anti_join(untransformed_data,
 
 ### Original Dataset
 
+#### Linear Regression
+
 ```{r}
 orig_lm <- lm(formula = priv_pay_median ~ ., data = (untransformed_dev_set %>% select(!c(priv_pay_mean, msa, index))))
 #train(
@@ -133,11 +136,27 @@ summary(orig_lm)
 
 orig_lm_pred <- predict(orig_lm, newdata = untransformed_test_set)
 
+print("")
 print("MAPE is:")
 MAPE(orig_lm_pred, untransformed_test_set$priv_pay_median)
 ```
+#### Decision Tree Regression
+
+```{r}
+orig_tree <- rpart(formula = priv_pay_median ~ ., data = (untransformed_dev_set %>% select(!c(priv_pay_mean, msa, index))))
+summary(orig_tree)
+
+orig_tree_pred <- predict(orig_tree, newdata = untransformed_test_set)
+
+print("")
+print("MAPE is:")
+MAPE(orig_tree_pred, untransformed_test_set$priv_pay_median)
+```
+
 
 ### Transformed Dataset
+
+#### Linear Regression
 
 ```{r}
 transformed_lm <- lm(formula = pay_median ~ ., data = (dev_set %>% select(!c(pay_mean, msa, index))))
@@ -150,6 +169,21 @@ summary(transformed_lm)
 
 transformed_lm_pred <- predict(transformed_lm, newdata = test_set)
 
+print("")
 print("MAPE is:")
 MAPE(transformed_lm_pred, test_set$pay_median)
 ```
+
+#### Decision Tree Regression
+
+```{r}
+transformed_tree <- rpart(formula = pay_median ~ ., data = (dev_set %>% select(!c(pay_mean, msa, index))))
+summary(transformed_tree)
+
+transformed_tree_pred <- predict(transformed_tree, newdata = test_set)
+
+print("")
+print("MAPE is:")
+MAPE(transformed_tree_pred, test_set$pay_median)
+```
+
