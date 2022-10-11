@@ -15,7 +15,8 @@ library(repr)
 library(ggnewscale)
 library(RColorBrewer)
 library(Lock5withR)
-df <- read.csv("priv_mcare_f_pay.csv")
+df <- read.csv("priv_pay_data_with_hospital.csv")
+df <- df[, -1]
 
 missing_patterns_plot = function(df, percent) {
   
