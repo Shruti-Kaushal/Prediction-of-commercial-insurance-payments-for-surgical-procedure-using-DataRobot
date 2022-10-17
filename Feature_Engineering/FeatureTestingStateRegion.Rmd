@@ -1,5 +1,5 @@
 ---
-title: "Feature Testing - SAIPE"
+title: "Feature Testing - State and Region"
 author: "Ryan Rogers"
 date: '2022-10-17'
 output: pdf_document
@@ -13,39 +13,17 @@ set.seed(123) #Set seed for reproducible analysis
 library(tidyverse)
 library(randomForest)
 library(MLmetrics)
-library(readxl)
 source(file = "../processing_functions.R") # import of data_split transformation
 ```
 
 # Data Ingestion and Processing
 
 ## Data Ingestion
-### General Data
 
 ```{r}
 data <- read.csv("../priv_mcare_f_pay.csv")
 hospital_data <- read.csv("../Hospital_Master_Sheet.csv")
 ```
-
-## Feature Data
-```{r, message=FALSE}
-saipe_2018 <- read_excel("../Data_Files/SAIPE/est18us.xls", skip=3) %>% mutate(year = 2018)
-saipe_2019 <- read_excel("../Data_Files/SAIPE/est19us.xls", skip=3) %>% mutate(year = 2019)
-saipe_2020 <- read_excel("../Data_Files/SAIPE/est20us.xls", skip=3) %>% mutate(year = 2020)
-
-saipe_data <- rbind(saipe_2018, saipe_2019)
-saipe_data <- rbind(saipe_data, saipe_2020)
-
-saipe_data <- saipe_data %>%
-  select(c(Name, `Poverty Percent, All Ages`, `Median Household Income`, year)) %>%
-  rename(`State_Poverty_Percent_All_Ages` = `Poverty Percent, All Ages`) %>%
-  rename(`State_Median_Household_Income` = `Median Household Income`)
-
-rm(saipe_2018)
-rm(saipe_2019)
-rm(saipe_2020)
-```
-
 
 ## Data Processing
 
@@ -80,23 +58,15 @@ working_set_with_hosp <- left_join(working_set, hospitals_msa, by = "msa") %>%
 rm(working_set)
 ```
 
-```{r}
-# Merge working data with SAIPE data
-working_set_with_saipe <- left_join(working_set_with_hosp, saipe_data, by = c('State' = 'Name','year'))
-
-rm(saipe_data)
-rm(working_set_with_hosp)
-```
-
 ## Train/Test Split
 
 ```{r}
 # Dev/Test Split - Taken from Baseline Model
-dt = sort(sample(nrow(working_set_with_saipe), nrow(working_set_with_saipe)*.8)) #Split data
-dev_set <-working_set_with_saipe[dt,] #80% training data
-test_set <-working_set_with_saipe[-dt,] #20% test data
+dt = sort(sample(nrow(working_set_with_hosp), nrow(working_set_with_hosp)*.8)) #Split data
+dev_set <-working_set_with_hosp[dt,] #80% training data
+test_set <-working_set_with_hosp[-dt,] #20% test data
 
-rm(working_set_with_saipe)
+rm(working_set_with_hosp)
 ```
 
 # Baseline Model
