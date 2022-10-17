@@ -1,0 +1,166 @@
+---
+title: "Feature Testing - SAIPE"
+author: "Ryan Rogers"
+date: '2022-10-17'
+output: pdf_document
+---
+
+# Library Imports and General Setup
+
+```{r setup, include=FALSE}
+set.seed(123) #Set seed for reproducible analysis
+
+library(tidyverse)
+library(randomForest)
+library(MLmetrics)
+library(readxl)
+source(file = "../processing_functions.R") # import of data_split transformation
+```
+
+# Data Ingestion and Processing
+
+## Data Ingestion
+### General Data
+
+```{r}
+data <- read.csv("../priv_mcare_f_pay.csv")
+hospital_data <- read.csv("../Hospital_Master_Sheet.csv")
+```
+
+## Feature Data
+```{r, message=FALSE}
+saipe_2018 <- read_excel("../Data_Files/SAIPE/est18us.xls", skip=3) %>% mutate(year = 2018)
+saipe_2019 <- read_excel("../Data_Files/SAIPE/est19us.xls", skip=3) %>% mutate(year = 2019)
+saipe_2020 <- read_excel("../Data_Files/SAIPE/est20us.xls", skip=3) %>% mutate(year = 2020)
+
+saipe_data <- rbind(saipe_2018, saipe_2019)
+saipe_data <- rbind(saipe_data, saipe_2020)
+
+saipe_data <- saipe_data %>%
+  select(c(Name, `Poverty Percent, All Ages`, `Median Household Income`, year)) %>%
+  rename(`State_Poverty_Percent_All_Ages` = `Poverty Percent, All Ages`) %>%
+  rename(`State_Median_Household_Income` = `Median Household Income`)
+
+rm(saipe_2018)
+rm(saipe_2019)
+rm(saipe_2020)
+```
+
+
+## Data Processing
+
+```{r}
+# Working / Predict Split - Function courtesy of Shruti
+split_dataset <- data %>% data_split(count_thresh = 50)
+working_set <- split_dataset[[1]]
+predict_set <- split_dataset[[2]]
+rm(data)
+rm(split_dataset)
+```
+
+```{r}
+# Hospital Dataset Prep - Taken from Baseline Model
+hospitals_msa <- hospital_data %>%
+  group_by(MSA_CD) %>%
+  summarise(Hospitals = n(),
+            PctTeaching = sum(teaching == "YES")/n(),
+            PctLargeHospital = sum(beds_grp == "500+")/n(),
+            Urban = ifelse(sum(urban_rural == "URBAN")/n() == 1, "Urban","Rural"),
+            PctPrivate = sum(ownership == "PRIVATE (NOT FOR PROFIT)" | ownership == "PRIVATE (FOR PROFIT)")/n()) %>%
+  rename(msa = MSA_CD)
+
+rm(hospital_data)
+```
+
+```{r}
+# Merge working data with hospital data - Taken from Baseline Model
+working_set_with_hosp <- left_join(working_set, hospitals_msa, by = "msa") %>%
+  select(-priv_pay_mean, -priv_pay_iqr, -mcare_pay_mean, -mcare_pay_sd)
+
+rm(working_set)
+```
+
+```{r}
+# Merge working data with SAIPE data
+working_set_with_saipe <- left_join(working_set_with_hosp, saipe_data, by = c('State' = 'Name','year'))
+
+rm(saipe_data)
+rm(working_set_with_hosp)
+```
+
+## Train/Test Split
+
+```{r}
+# Dev/Test Split - Taken from Baseline Model
+dt = sort(sample(nrow(working_set_with_saipe), nrow(working_set_with_saipe)*.8)) #Split data
+dev_set <-working_set_with_saipe[dt,] #80% training data
+test_set <-working_set_with_saipe[-dt,] #20% test data
+
+rm(working_set_with_saipe)
+```
+
+# Baseline Model
+
+## Initialization
+
+```{r}
+# Random Forest model - Taken from Baseline Model
+set.seed(123) #Set seed for reproducibility 
+# Fit Random Forest Model on training data
+Random_Forest <- randomForest(
+  formula = priv_pay_median ~ .,
+  data    = dev_set,
+  num.trees = 500,
+  mtry = 7,
+  nodesize = 20,
+  na.action = na.omit
+)
+```
+
+## Prediction on dev_set
+
+```{r}
+# Prediction - Taken from Baseline Model
+train_predict <- dev_set %>%
+  mutate(pred_priv_pay_median = predict(Random_Forest, dev_set)) %>%
+  filter(!is.na(pred_priv_pay_median))
+```
+
+## Model Evaluation
+
+```{r}
+# Evaluation - Taken from Baseline Model
+trn_m = MAPE(train_predict$pred_priv_pay_median, train_predict$priv_pay_median)
+
+train_mape_percent = mean(abs((train_predict$priv_pay_median - train_predict$pred_priv_pay_median)/train_predict$priv_pay_median),na.rm = T)*100
+```
+
+
+## Model Feature Importances
+```{r}
+# Feature Importances Plot - Taken from Baseline Model
+varImpPlot(Random_Forest, bg = "aquamarine3")
+```
+
+```{r}
+# Feature Importances - Tabulated
+feat_imps <- data.frame(Random_Forest$importance)
+show(feat_imps %>% arrange(desc(IncNodePurity)))
+rm(feat_imps)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
