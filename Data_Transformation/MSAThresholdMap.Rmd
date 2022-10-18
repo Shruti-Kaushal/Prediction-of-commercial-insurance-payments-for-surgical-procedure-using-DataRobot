@@ -1,0 +1,55 @@
+---
+title: "MSA Threshold Map"
+author: "Ryan Rogers"
+date: '2022-10-12'
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(kableExtra)
+library(sf)
+```
+
+```{r}
+data <- read.csv("priv_mcare_f_pay.csv")
+data$is_present = TRUE
+
+old_thresh_data <- data %>% filter(priv_count > 50 & !is.na(priv_count))
+new_thresh_data <- data %>% filter(priv_count > 34 & !is.na(priv_count))
+
+msa_geo <- read_sf("./shapefiles_cbsa", "cb_2021_us_cbsa_20m")
+us_geo <- read_sf("./shapefiles_nation", "cb_2021_us_nation_20m")
+msa_geo$GEOID = as.integer(msa_geo$GEOID)
+
+old_thresh_data <- full_join(old_thresh_data, msa_geo, by=c("msa" = "GEOID"))
+ggplot(data=old_thresh_data) +
+  geom_sf(data=us_geo,aes(geometry=geometry)) +
+  geom_sf(aes(fill=is_present,geometry=geometry)) +
+  #scale_fill_gradient(low="black", high="red") +
+  coord_sf(xlim=c(-125,-65),ylim = c(25,50))
+
+new_thresh_data <- full_join(new_thresh_data, msa_geo, by=c("msa" = "GEOID"))
+ggplot(data=new_thresh_data) +
+  geom_sf(data=us_geo,aes(geometry=geometry)) +
+  geom_sf(aes(fill=is_present,geometry=geometry)) +
+  #scale_fill_gradient(low="black", high="red") +
+  coord_sf(xlim=c(-125,-65),ylim = c(25,50))
+```
+
+```{r}
+both_thresh_data <- data %>% filter(priv_count > 34 & !is.na(priv_count)) %>% mutate(present_in = if_else(priv_count > 50, "Original Threshold", "Added by New Threshold", missing = "Not included with either threshold"))
+
+msa_geo <- read_sf("./shapefiles_cbsa", "cb_2021_us_cbsa_20m")
+us_geo <- read_sf("./shapefiles_nation", "cb_2021_us_nation_20m")
+msa_geo$GEOID = as.integer(msa_geo$GEOID)
+
+both_thresh_data <- full_join(both_thresh_data, msa_geo, by=c("msa" = "GEOID"))
+ggplot(data=both_thresh_data) +
+  geom_sf(data=us_geo,aes(geometry=geometry)) +
+  geom_sf(aes(fill=present_in,geometry=geometry)) +
+  #scale_fill_gradient(low="black", high="red") +
+  coord_sf(xlim=c(-125,-65),ylim = c(25,50))
+```
+
