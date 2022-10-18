@@ -33,11 +33,12 @@ def add_unique_identifier(data, id_col_list=['msa','year','site','group']):
     id_col_list (list) - a list of columns that uniquely identify all observations in the data frame
     
     Returns:
-    data (pandas: DataFrame) - a transformed data frame with an additional column for unique identifiers with the
+    data_new (pandas: DataFrame) - a transformed data frame with an additional column for unique identifiers with the
     header 'id'
     """
-    data['id'] = data[id_col_list].astype(str).agg('_'.join, axis = 1)
-    cols = data.columns.to_list()
+    data_new = data.copy()
+    data_new['id'] = data_new[id_col_list].astype(str).agg('_'.join, axis = 1)
+    cols = data_new.columns.to_list()
     cols = cols[-1:] + cols[:-1]
-    data = data[cols]
-    return data
+    data_new = data_new[cols]
+    return data_new
