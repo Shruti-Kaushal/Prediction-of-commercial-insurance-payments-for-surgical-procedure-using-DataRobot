@@ -1,6 +1,6 @@
 feature_dict = {count_col_name: 'priv_count',\
-count_thresh: 50 \
-}
+count_thresh: 50, \
+id_col_list: ['msa','year','site','group']}
 
 def data_split(data, count_col_name, count_thresh = 50):
     """
@@ -20,3 +20,25 @@ def data_split(data, count_col_name, count_thresh = 50):
     future_data = data[(data[count_col_name] <= count_thresh) | (data[count_col_name].isnull())]
     model_data = data[data[count_col_name] > count_thresh]
     return model_data, future_data
+
+
+def add_unique_identifier(data, id_col_list=['msa','year','site','group']):
+    """
+    Adds a unique identifier to the data which is constructed by joining the entries in the columns of col_list
+    with a '_' separator.
+    
+    Args:
+    data (pandas: DataFrame) - a pandas data frame for which a unique identifier needs to be constructed. If using
+    default settings it should have at least 4 columns with headers - 'msa', 'year','site' and 'group'   
+    id_col_list (list) - a list of columns that uniquely identify all observations in the data frame
+    
+    Returns:
+    data_new (pandas: DataFrame) - a transformed data frame with an additional column for unique identifiers with the
+    header 'id'
+    """
+    data_new = data.copy()
+    data_new['id'] = data_new[id_col_list].astype(str).agg('_'.join, axis = 1)
+    cols = data_new.columns.to_list()
+    cols = cols[-1:] + cols[:-1]
+    data_new = data_new[cols]
+    return data_new
