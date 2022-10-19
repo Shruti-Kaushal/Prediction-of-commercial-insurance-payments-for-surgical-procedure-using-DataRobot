@@ -1,0 +1,90 @@
+---
+title: "Feature Testing - Income per capita & S0102 data"
+author: "Parv"
+date: '2022-10-19'
+output: pdf_document
+---
+
+```{r, echo =FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(corrr)
+```
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+df <- read.csv("FeatureTestingIncomeS0102.csv")
+df <- subset(df, select = -c(X))
+```
+
+
+# Correlations
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE, fig.height=7, fig.width=7}
+res.cor <- correlate(df)
+res.cor %>% rplot()  +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE, fig.height=7, fig.width=7}
+res.cor %>%
+  #rearrange(method = "MDS", absolute = FALSE) %>%
+  shave() %>% 
+  rplot(shape = 15, colours = c("red", "grey", "green"))  +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+
+# Scatterplots
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+data_ = df %>% 
+  select(where(is.numeric))
+
+data_ = data_%>% 
+  select(5, 18:ncol(data_))
+```
+
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+sct_plot_function <- function(dataset = data_, target_x = data_$priv_pay_median, target_y_num){
+
+  ggplot(dataset, aes(x = target_x, y = data_[,target_y_num])) +
+    geom_point() + 
+    theme_bw() +
+    labs(title = paste("Scatter plot of Private Payout Median (MSA level) Vs ", colnames(data_)[target_y_num]), y = colnames(data_)[target_y_num], x = "Private Payout Median (MSA level)") +
+    theme(plot.title = element_text(hjust = 0.5)) 
+}
+```
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+par(mfrow=c(3,5))
+for(i in 2:(dim(data_)[2])){
+        plot(sct_plot_function(target_y_num = i))
+}
+par(mfrow=c(1,1))
+```
+
+# LinReg Coefficients
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+model = lm(priv_pay_median ~ ., data = df %>% select(-c(Urban)))
+summary(model)
+```
+
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+model_new_featuers = lm(priv_pay_median ~ ., data = data_)
+summary(model_new_featuers)
+```
+
+
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+# df_na_omit = na.omit(df)
+# DF <- as.data.frame(unclass(df_na_omit),stringsAsFactors=TRUE)
+# str(DF)
+# 
+# (l <- sapply(df_na_omit, function(x) is.factor(x)))
+# m <- df_na_omit[, l]
+# ifelse(n <- sapply(m, function(x) length(levels(x))) == 1, "DROP", "NODROP")
+```
+
