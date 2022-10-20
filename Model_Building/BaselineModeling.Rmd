@@ -15,7 +15,7 @@ library(MLmetrics)
 ## Modeling with threshold 50 number of claims
 
 ```{r, warning = FALSE, message = FALSE}
-data <- read.csv("priv_mcare_f_pay.csv")
+data <- read.csv("priv_mcare_f_pay_2022Oct18.csv")
 hospital_data <- read.csv("Hospital_Master_Sheet.csv")
 
 hospitals_msa <- hospital_data %>%
@@ -96,7 +96,7 @@ cat("Test MAPE:" , round(test_mape_percent, 2), "%\n")
 ## Modeling with threshold 35 number of claims
 
 ```{r, warning = FALSE, message = FALSE}
-data <- read.csv("priv_mcare_f_pay.csv")
+data <- read.csv("priv_mcare_f_pay_2022Oct18.csv")
 hospital_data <- read.csv("Hospital_Master_Sheet.csv")
 
 hospitals_msa <- hospital_data %>%

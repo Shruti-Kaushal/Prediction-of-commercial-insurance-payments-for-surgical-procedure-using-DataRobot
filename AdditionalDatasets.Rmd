@@ -1,0 +1,126 @@
+---
+title: "Additional Dataset Exploration"
+output:
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+business_data <- read.csv("business_msa_data.csv")
+data <- read.csv("priv_pay_data_with_hospital.csv")
+econ_data <- read.csv("ACSST5Y2020.S1811-2022-10-18T150043.csv")
+
+econ_data_long <- econ_data %>%
+  filter(Label..Grouping. == "Population Age 16 and Over") %>%
+  pivot_longer(cols = c(2:2818),
+               names_to = "MSA",
+               values_to = "Population")
+
+split_data <- econ_data_long %>%
+  filter(!grepl("Micro",MSA)) %>%
+  separate(col = MSA, sep = "Metro", into = c("MSAName", NA)) %>%
+  mutate(Population = as.numeric(gsub(",", "", Population))) %>%
+  group_by(MSAName) %>%
+  summarise(Population = max(Population))
+
+msas_in_data <- data %>%
+  select(msa, CBSA_NAME) %>%
+  distinct()
+
+msa_list <- read.csv("msa_list.csv",header = FALSE)
+msa_list2 <- msa_list %>%
+  slice(4:1923) %>%
+  filter(V5 == "Metropolitan Statistical Area") %>%
+  select(V1,V4) %>%
+  distinct() %>%
+  rename(msa = V1,
+         MSA_Name = V4) %>%
+  select(-msa)
+
+msa_list3 <- msa_list %>%
+  slice(4:1923) %>%
+  filter(V5 == "Metropolitan Statistical Area") %>%
+  select(V1,V2,V4) %>%
+  mutate(V1 = ifelse(V2 != "", V2, V1)) %>%
+  distinct() %>%
+  rename(msa = V1,
+         MSA_Name = V4) %>%
+  select(-V2) %>%
+  mutate(msa = as.numeric(msa))
+
+pop_data <- cbind(msa_list2, split_data)
+
+pop_data2 <- left_join(msa_list3, pop_data, by = "MSA_Name")
+
+  
+
+```
+
+
+# Population Data (S1811)
+
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA}
+msa_pay_data <- data %>%
+  group_by(msa,CBSA_NAME) %>%
+  summarise(msa_priv_pay_mean = weighted.mean(priv_pay_mean, priv_count, na.rm = T),
+            msa_priv_pay_median = median(priv_pay_median, priv_count, na.rm = T))
+
+full_data_with_pop <- left_join(msa_pay_data, pop_data2, by = "msa")
+
+full_data_with_pop2 <- full_data_with_pop %>%
+  select(msa_priv_pay_mean, msa_priv_pay_median, Population)
+
+cor(full_data_with_pop2, use = "complete.obs")
+
+ggplot(data = full_data_with_pop2, aes(x = Population, y = msa_priv_pay_mean)) + geom_point() +
+  labs(title = "Private Payout Mean by Population of MSA",
+       x = "Total Population",
+       y = "Private Payout Mean (by MSA)")
+
+
+```
+
+* Not seeing a ton of correlation between MSA population and private payouts
+* Might be worth including in the model as it could still be significant
+* Likely a better variable to include rather than employment or payroll
+
+
+# Total Employment and Annual Payroll
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA}
+
+total_employment <- business_data %>%
+  filter(naics == "------") %>%
+  select(msa, emp, ap)
+
+msa_pay_data <- data %>%
+  group_by(msa) %>%
+  summarise(msa_priv_pay_mean = weighted.mean(priv_pay_mean, priv_count, na.rm = T),
+            msa_priv_pay_median = median(priv_pay_median, priv_count, na.rm = T))
+
+full_data <- left_join(msa_pay_data, total_employment, by = "msa")
+
+cor(full_data, use = "complete.obs")
+
+ggplot(data = full_data, aes(x = emp, y = msa_priv_pay_mean)) + geom_point() +
+  labs(title = "Private Payout Mean by Total Employment of MSA",
+       x = "Total Employment",
+       y = "Private Payout Mean (by MSA)")
+ggplot(data = full_data, aes(x = ap, y = msa_priv_pay_mean)) + geom_point() +
+  labs(title = "Private Payout Mean by Annual Payroll of MSA",
+       x = "Annual Payroll",
+       y = "Private Payout Mean (by MSA)")
+
+
+
+
+```
+
+
+* Not seeing much correlation between MSA employment or annual payroll with private payments
+* Seems more logical to use population rather than employment or annual payroll if we choose to use this type of feature in the model
