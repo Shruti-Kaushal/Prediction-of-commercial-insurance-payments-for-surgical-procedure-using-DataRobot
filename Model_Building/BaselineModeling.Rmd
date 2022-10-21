@@ -37,7 +37,7 @@ new_data_with_hospital <- left_join(new_data, hospitals_msa, by = "msa")
 model_data <- new_data_with_hospital %>%
   filter(priv_count >= 50) %>%
   filter(!is.na(priv_pay_median)) %>%
-  select(-priv_pay_mean, -priv_pay_iqr, -mcare_pay_mean, -mcare_pay_sd)
+  select(-priv_pay_mean, -priv_pay_iqr, -mcare_pay_mean, -mcare_pay_sd, -Urban, -msa)
 
 predict_data <- new_data_with_hospital %>%
   filter(priv_count <= 10) %>%
@@ -118,7 +118,7 @@ new_data_with_hospital <- left_join(new_data, hospitals_msa, by = "msa")
 model_data <- new_data_with_hospital %>%
   filter(priv_count >= 35) %>%
   filter(!is.na(priv_pay_median)) %>%
-  select(-priv_pay_mean, -priv_pay_iqr, -mcare_pay_mean, -mcare_pay_sd)
+  select(-priv_pay_mean, -priv_pay_iqr, -mcare_pay_mean, -mcare_pay_sd,-Urban, -msa)
 
 predict_data <- new_data_with_hospital %>%
   filter(priv_count <= 10) %>%
