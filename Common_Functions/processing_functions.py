@@ -1,8 +1,5 @@
-feature_dict = {count_col_name: 'priv_count',\
-count_thresh: 50, \
-id_col_list: ['msa','year','site','group']}
 
-def data_split(data, count_col_name, count_thresh = 50):
+def data_split(data, count_col_name = 'priv_count', count_thresh = 50):
     """
     This function splits the data into model set and future set. Model set is the data used to train, evaluate
     test the model. Future data is what the model needs to predict on.
