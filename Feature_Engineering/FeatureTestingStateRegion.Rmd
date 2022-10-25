@@ -13,7 +13,7 @@ set.seed(123) #Set seed for reproducible analysis
 library(tidyverse)
 library(randomForest)
 library(MLmetrics)
-source(file = "../processing_functions.R") # import of data_split transformation
+source(file = "../processing_functions.R")# import of data_split transformation
 ```
 
 # Data Ingestion and Processing
@@ -73,7 +73,7 @@ dt = sort(sample(nrow(working_set_with_reg), nrow(working_set_with_reg)*.8)) #Sp
 dev_set <-working_set_with_reg[dt,] #80% training data
 test_set <-working_set_with_reg[-dt,] #20% test data
 
-rm(working_set_with_reg)
+#rm(working_set_with_reg)
 ```
 
 # Baseline Model
@@ -129,8 +129,26 @@ rm(feat_imps)
 
 
 
+# Correlation by Group and Region
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+working_set_with_reg_group <- working_set_with_reg %>%
+  group_by(group,prov_region) %>%
+  summarise(group_priv_pay_median = median(priv_pay_median, na.rm = T),
+            group_mcare_pay_median = median(mcare_pay_median,na.rm = T)) %>%
+  ungroup()
 
 
+ggplot(data = working_set_with_reg_group, aes(x = group, y = group_priv_pay_median, color = prov_region)) + geom_point() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+
+
+
+```
+
+* Not a ton of variation in private payment median based on region for most procedures
+* Some procedures like ant_cerv_fusion, ant_tls_fusion do see some variation by region
 
 
 
