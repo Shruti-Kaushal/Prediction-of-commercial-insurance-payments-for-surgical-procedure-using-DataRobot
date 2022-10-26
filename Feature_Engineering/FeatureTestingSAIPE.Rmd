@@ -14,7 +14,7 @@ library(tidyverse)
 library(randomForest)
 library(MLmetrics)
 library(readxl)
-source(file = "../processing_functions.R") # import of data_split transformation
+source(file = "../Common_Functions/processing_functions.R") # import of data_split transformation
 ```
 
 # Data Ingestion and Processing
@@ -23,8 +23,8 @@ source(file = "../processing_functions.R") # import of data_split transformation
 ### General Data
 
 ```{r}
-data <- read.csv("../priv_mcare_f_pay.csv")
-hospital_data <- read.csv("../Hospital_Master_Sheet.csv")
+data <- read.csv("../Data_Files/JnJ_Files/priv_mcare_f_pay.csv")
+hospital_data <- read.csv("../Data_Files/JnJ_Files/Hospital_Master_Sheet.csv")
 ```
 
 ## Feature Data
