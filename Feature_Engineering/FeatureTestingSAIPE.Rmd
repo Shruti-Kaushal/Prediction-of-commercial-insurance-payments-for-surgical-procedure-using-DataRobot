@@ -14,7 +14,7 @@ library(tidyverse)
 library(randomForest)
 library(MLmetrics)
 library(readxl)
-source(file = "../processing_functions.R") # import of data_split transformation
+source(file = "../Common_Functions/processing_functions.R") # import of data_split transformation
 ```
 
 # Data Ingestion and Processing
@@ -23,8 +23,8 @@ source(file = "../processing_functions.R") # import of data_split transformation
 ### General Data
 
 ```{r}
-data <- read.csv("../priv_mcare_f_pay.csv")
-hospital_data <- read.csv("../Hospital_Master_Sheet.csv")
+data <- read.csv("../Data_Files/JnJ_Files/priv_mcare_f_pay.csv")
+hospital_data <- read.csv("../Data_Files/JnJ_Files/Hospital_Master_Sheet.csv")
 ```
 
 ## Feature Data
@@ -96,7 +96,7 @@ dt = sort(sample(nrow(working_set_with_saipe), nrow(working_set_with_saipe)*.8))
 dev_set <-working_set_with_saipe[dt,] #80% training data
 test_set <-working_set_with_saipe[-dt,] #20% test data
 
-rm(working_set_with_saipe)
+#rm(working_set_with_saipe)
 ```
 
 # Baseline Model
@@ -151,10 +151,24 @@ rm(feat_imps)
 
 
 
+# Correlations at Group Level
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+working_set_with_saipe_group <- working_set_with_saipe %>%
+  group_by(group,State) %>%
+  summarise(group_priv_pay_median = median(priv_pay_median, na.rm = T),
+            group_mcare_pay_median = median(mcare_pay_median,na.rm = T),
+            poverty = mean(State_Poverty_Percent_All_Ages, na.rm = T),
+            income = mean(State_Median_Household_Income, na.rm = T)) %>%
+  ungroup() %>%
+  select(-group, -State)
+
+cor(working_set_with_saipe_group, use = "complete.obs")
+
+```
 
 
-
-
+* Not super strong correlations of poverty and income with payments, but could potentially be helpful after clustering
 
 
 
