@@ -41,4 +41,22 @@ aggregate_hospital_features <- function(hospital_data) {
     rename(msa = MSA_CD)
   return(hospitals_msa)
 }
-
+train_test_split <- function(data_to_split, proportion_train = .8, seed = 123){
+  # This function will split our dataset into train (dev) and test sets
+  # 
+  # Args:
+  # data_to_split (dta frame) - data to be split into train and test
+  # proportion train - proportion of our data to be used in the train set
+  # seed - Seed used for reproducible analysis
+  # 
+  # Returns:
+  # List of 2 data frames where the first element is training data and second is test data
+  # train (data frame) - train data
+  # test (data frame) - test
+  
+  set.seed(seed) # Set seed for reproducible analysis
+  dt = sort(sample(nrow(data_to_split), nrow(data_to_split)*.8)) #Split data
+  train <-data_to_split[dt,] #80% training data
+  test <-data_to_split[-dt,] #20% test data
+  return(list(train, test))
+}
