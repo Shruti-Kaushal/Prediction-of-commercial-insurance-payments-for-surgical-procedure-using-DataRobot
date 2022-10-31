@@ -101,62 +101,58 @@ hospital_data <- read.csv("Hospital_Master_Sheet.csv")
 Hospital data aggregation, data split, and data filtering are now compartmentalized
 
 ```{r, warning = FALSE, message = FALSE}
+# Hospital data aggregation - validated for sameness
 hospitals_msa <- hospital_data %>% aggregate_hospital_features()
 rm(hospital_data)
 
-new_data <- data %>%
-  filter(priv_pay_median >= 0 | is.na(priv_pay_median)) %>%
-  filter(priv_count != 0)
+# Data split into model data and predict - varies from original slightly
+split_dataset <- data %>% data_split(count_thresh = 34)
+working_set <- split_dataset[[1]]
+predict_set <- split_dataset[[2]]
 
-new_data_with_hospital <- left_join(new_data, hospitals_msa, by = "msa")
+model_data <- left_join(working_set, hospitals_msa, by = "msa")  %>%
+  select(-priv_pay_mean, -priv_pay_iqr, -mcare_pay_mean, -mcare_pay_sd, -Urban, -msa)
+rm(working_set)
 
+predict_data <- left_join(predict_set, hospitals_msa, by = "msa")  %>%
+  select(-priv_pay_mean, -priv_pay_iqr, -mcare_pay_mean, -mcare_pay_sd, -Urban, -msa)
+rm(predict_set)
 
-model_data <- new_data_with_hospital %>%
-  filter(priv_count >= 35) %>%
-  filter(!is.na(priv_pay_median)) %>%
-  select(-priv_pay_mean, -priv_pay_iqr, -mcare_pay_mean, -mcare_pay_sd,-Urban, -msa)
+# Train test split
+train_test_data <- model_data %>% train_test_split(proportion = 0.8)
+rm(model_data)
 
-predict_data <- new_data_with_hospital %>%
-  filter(priv_count <= 10) %>%
-  filter(priv_pay_median > 0)
+train <- train_test_data[[1]]
+test <- train_test_data[[2]]
 
-set.seed(123) #Set seed for reproducible analysis
-dt = sort(sample(nrow(model_data), nrow(model_data)*.8)) #Split data
-train <-model_data[dt,] #80% training data
-test <-model_data[-dt,] #20% test data
-
-
-
-# Random Forest model
-set.seed(123) #Set seed for reproducibility 
-# Fit Random Forest Model on training data
-Random_Forest <- randomForest(
-  formula = priv_pay_median ~ .,
-  data    = train,
-  num.trees = 500,
-  mtry = 7,
-  nodesize = 20,
-  na.action = na.omit
-)
-
-train_predict <- train %>%
-  mutate(pred_priv_pay_median = predict(Random_Forest, train)) %>%
-  filter(!is.na(pred_priv_pay_median))
-trn_m = MAPE(train_predict$pred_priv_pay_median, train_predict$priv_pay_median)
-train_mape_percent = mean(abs((train_predict$priv_pay_median - train_predict$pred_priv_pay_median)/train_predict$priv_pay_median),na.rm = T)*100
 ```
+
+Model Creation and Prediction are now compartmentalized
+
+```{r, warning = FALSE, message = FALSE}
+# Random Forest model
+
+# Fit Random Forest Model on training data
+Random_Forest <- baseline_rdm_forest(data = train)
+
+train_predict <- make_baseline_prediction(Random_Forest, train)
+rm(train)
+
+train_mape_percent = get_mape_percentage(train_predict)
+```
+
 
 ```{r, warning = FALSE, message = FALSE}
 varImpPlot(Random_Forest, bg = "aquamarine3")
 
 ```
 
+
 ```{r, warning = FALSE, message = FALSE}
-test_predict <- test %>%
-  mutate(pred_priv_pay_median = predict(Random_Forest, test)) %>%
-  filter(!is.na(pred_priv_pay_median))
-tst_m = MAPE(test_predict$pred_priv_pay_median, test_predict$priv_pay_median)
-test_mape_percent = mean(abs((test_predict$priv_pay_median - test_predict$pred_priv_pay_median)/test_predict$priv_pay_median),na.rm = T)*100
+test_predict <- make_baseline_prediction(Random_Forest, test)
+rm(test)
+
+test_mape_percent = get_mape_percentage(test_predict)
 ```
 
 ```{r}
