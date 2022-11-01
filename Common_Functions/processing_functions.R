@@ -20,4 +20,43 @@ data_split <- function(data, count_col_name = 'priv_count', count_thresh = 50) {
   return(list(model_data, future_data))
 }
 
-
+aggregate_hospital_features <- function(hospital_data) {
+  # This function will convert our initial hospital data into a version aggregated at
+  # the MSA level.
+  # 
+  # Args:
+  # hospital_data (data frame) - a data frame containing the hospital data as it was originally stored
+  # 
+  # Returns:
+  # hospitals_msa (data frame) - a data frame aggregated by MSA
+  
+  library(dplyr)
+  hospitals_msa <- hospital_data %>%
+    group_by(MSA_CD) %>%
+    summarise(Hospitals = n(),
+              PctTeaching = sum(teaching == "YES")/n(),
+              PctLargeHospital = sum(beds_grp == "500+")/n(),
+              Urban = ifelse(sum(urban_rural == "URBAN")/n() == 1, "Urban","Rural"),
+              PctPrivate = sum(ownership == "PRIVATE (NOT FOR PROFIT)" | ownership == "PRIVATE (FOR PROFIT)")/n()) %>%
+    rename(msa = MSA_CD)
+  return(hospitals_msa)
+}
+train_test_split <- function(data_to_split, proportion_train = .8, seed = 123){
+  # This function will split our dataset into train (dev) and test sets
+  # 
+  # Args:
+  # data_to_split (dta frame) - data to be split into train and test
+  # proportion train - proportion of our data to be used in the train set
+  # seed - Seed used for reproducible analysis
+  # 
+  # Returns:
+  # List of 2 data frames where the first element is training data and second is test data
+  # train (data frame) - train data
+  # test (data frame) - test
+  
+  set.seed(seed) # Set seed for reproducible analysis
+  dt = sort(sample(nrow(data_to_split), nrow(data_to_split)*.8)) #Split data
+  train <-data_to_split[dt,] #80% training data
+  test <-data_to_split[-dt,] #20% test data
+  return(list(train, test))
+}
