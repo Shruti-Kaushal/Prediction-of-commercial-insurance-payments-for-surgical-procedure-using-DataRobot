@@ -55,7 +55,7 @@ train_test_split <- function(data_to_split, proportion_train = .8, seed = 123){
   # test (data frame) - test
   
   set.seed(seed) # Set seed for reproducible analysis
-  dt = sort(sample(nrow(data_to_split), nrow(data_to_split)*.8)) #Split data
+  dt = sort(sample(nrow(data_to_split), nrow(data_to_split)*proportion_train)) #Split data
   train <-data_to_split[dt,] #80% training data
   test <-data_to_split[-dt,] #20% test data
   return(list(train, test))

@@ -119,7 +119,7 @@ predict_data <- left_join(predict_set, hospitals_msa, by = "msa")  %>%
 rm(predict_set)
 
 # Train test split
-train_test_data <- model_data %>% train_test_split(proportion = 0.8)
+train_test_data <- model_data %>% train_test_split(proportion_train = 0.8)
 rm(model_data)
 
 train <- train_test_data[[1]]

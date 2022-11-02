@@ -1,0 +1,44 @@
+---
+title: "ASC vs Inpatient"
+author: "Ryan Rogers"
+date: "11/1/2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+source(file = "../Common_Functions/processing_functions.R") # import of data_split transformation
+source(file = "../Common_Functions/baseline_model.R") # import of baseline model
+```
+
+
+```{r, warning = FALSE, message = FALSE}
+data <- read.csv("../Data_Files/JnJ_Files/priv_mcare_f_pay_2022Oct18.csv")
+```
+
+```{r}
+split_dataset <- data %>% data_split(count_thresh = 49)
+working_set <- split_dataset[[1]]
+predict_set <- split_dataset[[2]]
+
+grouped_data <- working_set %>%
+  filter(site != "Outpatient") %>%
+  filter(group == "tka" | group == "pka" | group == "tha" | group == "ankle_fix" |group == "ant_cerv_fusion") %>%
+  group_by(group, site) %>%
+  summarize(Maximum = max(priv_pay_median),
+            Minimum = min(priv_pay_median)) %>%
+  mutate(ASC_max_Inpatient_min = if_else(site == "ASC", Maximum, Minimum)) %>%
+  mutate(site = if_else(site == "ASC", "Max ASC Payment", "Min Inpatient Payment")) %>%
+  mutate(ordering = if_else(site == "Max ASC Payment", Maximum, 0))
+  
+```
+
+```{r}
+ggplot(grouped_data) +
+  geom_bar(aes(x = ASC_max_Inpatient_min, y = reorder(group,ordering), fill = site), stat='identity',position="dodge", width = 0.5) +
+  ggtitle("Difference Between ASC and Inpatient (threshold = 50)") +
+  xlab("Payment Amount (US $)") +
+  ylab("Procedure Group")
+```
+
