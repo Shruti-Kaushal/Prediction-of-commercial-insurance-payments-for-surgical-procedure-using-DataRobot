@@ -1,22 +1,25 @@
 group
-bariatric
-breast reconstruction
-bsp
-bunionectomy
-clavicle fixation
-fess
-hysterect
-kidney ablation
-lap appendectomy
-liver ablation
-mastectomy
-navigation
-orthovisc_monovisc
-partial shoulder arthroplasty
-pka
-pnn
-prostatectomy
-radius/ulna internal fixation
-robotic_assisted_surgery
-rtc_slap_bank
-septoplasty
+ankle_fix
+ant_cerv_fusion
+cardiac ablation
+cardiac ablation_additional_discrete
+cardiac ablation_linear_focal
+cardiac_ablaton_anesthesia
+cardiac_ablaton_ice
+colorect
+femoral shaft fixation
+hernia
+hip_fracture_fixation
+laac
+lung ablation
+lung ablation
+prox_tibia_fixation
+proximal humerus
+revision_tha
+revision_tka
+tavr
+tha
+thoracic
+tka
+tpa
+tsa
