@@ -9,7 +9,7 @@ baseline_rdm_forest <- function(data, seed = 123){
   # 
   # Returns:
   # hospitals_msa (data frame) - a data frame aggregated by MSA
-  set.seed(123) #Set seed for reproducibility
+  set.seed(seed) #Set seed for reproducibility
   Random_Forest <- randomForest(
     formula = priv_pay_median ~ .,
     data    = data,
