@@ -37,7 +37,7 @@ hospitals_msa <- hospital_data %>% aggregate_hospital_features()
 rm(hospital_data)
 
 # Data split into model data and predict - varies from original slightly
-split_dataset <- data %>% data_split(count_thresh = 49)
+split_dataset <- data %>% data_split(count_thresh = 34)
 working_set <- split_dataset[[1]]
 predict_set <- split_dataset[[2]]
 
@@ -62,6 +62,8 @@ test <- test %>% drop_na()
 
 
 ## Modeling
+
+For parameter info, see: https://www.r-bloggers.com/2021/05/strong-random-forests-with-xgboost/ , https://cran.r-project.org/web/packages/xgboost/xgboost.pdf , and https://xgboost.readthedocs.io/en/latest/tutorials/rf.html
 
 ```{r, warning = FALSE, message = FALSE}
 
