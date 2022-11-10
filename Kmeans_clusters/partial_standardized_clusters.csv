@@ -1,0 +1,51 @@
+group,cluster
+ankle_fix,2
+ant_cerv_fusion,2
+ant_tls_fusion,1
+bariatric,1
+breast reconstruction,0
+bsp,0
+bunionectomy,0
+cardiac ablation,2
+cardiac ablation_additional_discrete,0
+cardiac ablation_linear_focal,0
+cardiac_ablaton_anesthesia,0
+cardiac_ablaton_ice,0
+clavicle fixation,0
+colorect,1
+femoral shaft fixation,1
+fess,0
+hepat,1
+hernia,2
+hip_fracture_fixation,1
+hysterect,2
+intracranial_thromb,1
+kidney ablation,0
+laac,1
+lap appendectomy,0
+liver ablation,2
+lung ablation,2
+lung ablation,2
+mastectomy,0
+navigation,0
+orthovisc_monovisc,0
+partial shoulder arthroplasty,2
+pka,2
+pnn,0
+post_cerv_fusion,1
+post_tls_fusion,1
+prostatectomy,2
+prox_tibia_fixation,1
+proximal humerus,2
+radius/ulna internal fixation,2
+revision_tha,1
+revision_tka,1
+robotic_assisted_surgery,0
+rtc_slap_bank,0
+septoplasty,0
+tavr,0
+tha,1
+thoracic,1
+tka,1
+tpa,1
+tsa,1
