@@ -5,158 +5,339 @@ date: "10/28/2022"
 output: pdf_document
 ---
 
-Library imports are left as-is. They'll be necessary in almost every version. New imports added for helper libraries
+## Library Imports
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(randomForest)
 library(MLmetrics)
-source(file = "../Common_Functions/processing_functions.R") # import of data_split transformation
-source(file = "../Common_Functions/baseline_model.R") # import of baseline model
+source(file = "../../Common_Functions/processing_functions.R") # import of data_split transformation
+source(file = "../../Common_Functions/baseline_model.R") # import of baseline model
+```
+
+## Cluster loads
+
+```{r}
+cluster_zero <- read.csv("group0.csv")
+cluster_zero$present <- TRUE
+cluster_one <- read.csv("group1.csv")
+cluster_one$present <- TRUE
+cluster_two <- read.csv("group2.csv")
+cluster_two$present <- TRUE
+```
+
+## Data File Ingestion
+
+```{r}
+data <- read.csv("../../Data_Files/JnJ_Files/priv_mcare_f_pay_2022Oct18.csv")
+```
+
+
+## Hospital Data Aggregation
+
+```{r}
+hospital_data <- read.csv("../../Data_Files/JnJ_Files/Hospital_Master_Sheet.csv")
+
+# Hospital data aggregation - validated for sameness
+hospitals_msa <- hospital_data %>% aggregate_hospital_features()
+rm(hospital_data)
+```
+
+## Sample Size Input
+```{r}
+SAMPLE_SIZE = 1000
 ```
 
 ## Modeling with threshold 50 number of claims
 
-Will leave data import alone for now.
-
 ```{r, warning = FALSE, message = FALSE}
-data <- read.csv("priv_mcare_f_pay_2022Oct18.csv")
-hospital_data <- read.csv("Hospital_Master_Sheet.csv")
-```
+result_mapes <- data.frame(matrix(ncol = 9, nrow = 0))
 
-Hospital data aggregation, data split, and data filtering are now compartmentalized
+colnames(result_mapes) <- c('train_mapes_zero', 'train_mapes_one', 'train_mapes_two', 'test_mapes_zero', 'test_mapes_one', 'test_mapes_two', 'train_mapes_total', 'test_mapes_total', 'threshold')
 
-```{r, warning = FALSE, message = FALSE}
-# Hospital data aggregation - validated for sameness
-hospitals_msa <- hospital_data %>% aggregate_hospital_features()
-rm(hospital_data)
+for (x in 1:SAMPLE_SIZE){
 
-# Data split into model data and predict - varies from original slightly
-split_dataset <- data %>% data_split(count_thresh = 49)
-working_set <- split_dataset[[1]]
-predict_set <- split_dataset[[2]]
+  COUNT_THRESH = 49
+  SEED = x
+  
+  
+  # Data split into model data and predict
+  split_dataset <- data %>% data_split(count_thresh = COUNT_THRESH)
+  working_set <- split_dataset[[1]]
+  predict_set <- split_dataset[[2]]
+  rm(split_dataset)
+  
+  model_data <- left_join(working_set, hospitals_msa, by = "msa")  %>%
+    select(-priv_pay_mean, -priv_pay_iqr, -mcare_pay_mean, -mcare_pay_sd, -Urban, -msa)
+  rm(working_set)
+  
+  predict_data <- left_join(predict_set, hospitals_msa, by = "msa")  %>%
+    select(-priv_pay_mean, -priv_pay_iqr, -mcare_pay_mean, -mcare_pay_sd, -Urban, -msa)
+  rm(predict_set)
+  
+  # Break up model by cluster
+  model_data_zero = model_data %>% left_join(cluster_zero, by = 'group') %>% filter(present == TRUE) %>% select(-present)
+  model_data_one = model_data %>% left_join(cluster_one, by = 'group') %>% filter(present == TRUE) %>% select(-present)
+  model_data_two = model_data %>% left_join(cluster_two, by = 'group') %>% filter(present == TRUE) %>% select(-present)
+  
+  # Cluster 0
+  
+  # Train test split
+  train_test_data <- model_data_zero %>% train_test_split(proportion_train = 0.8, seed = SEED)
+  rm(model_data)
+  
+  train <- train_test_data[[1]]
+  test <- train_test_data[[2]]
+  zero_train_len = nrow(train)
+  zero_test_len = nrow(test)
+  # Random Forest model
+  # Fit Random Forest Model on training data
+  Random_Forest <- baseline_rdm_forest(data = train)
+  
+  train_predict <- make_baseline_prediction(Random_Forest, train)
+  rm(train)
+  
+  train_mape_percent_zero = get_mape_percentage(train_predict)
+  test_predict <- make_baseline_prediction(Random_Forest, test)
+  rm(test)
+  
+  test_mape_percent_zero = get_mape_percentage(test_predict)
+  
+  # Cluster 1
+  
+  # Train test split
+  train_test_data <- model_data_one %>% train_test_split(proportion_train = 0.8, seed = SEED)
+  rm(model_data)
+  
+  train <- train_test_data[[1]]
+  test <- train_test_data[[2]]
+  one_train_len = nrow(train)
+  one_test_len = nrow(test)
+  # Random Forest model
+  # Fit Random Forest Model on training data
+  Random_Forest <- baseline_rdm_forest(data = train)
+  
+  train_predict <- make_baseline_prediction(Random_Forest, train)
+  rm(train)
+  
+  train_mape_percent_one = get_mape_percentage(train_predict)
+  test_predict <- make_baseline_prediction(Random_Forest, test)
+  rm(test)
+  
+  test_mape_percent_one = get_mape_percentage(test_predict)
+  
+  # Cluster 2
+  
+  # Train test split
+  train_test_data <- model_data_two %>% train_test_split(proportion_train = 0.8, seed = SEED)
+  rm(model_data)
+  
+  train <- train_test_data[[1]]
+  test <- train_test_data[[2]]
+  two_train_len = nrow(train)
+  two_test_len = nrow(test)
+  # Random Forest model
+  # Fit Random Forest Model on training data
+  Random_Forest <- baseline_rdm_forest(data = train)
+  
+  train_predict <- make_baseline_prediction(Random_Forest, train)
+  rm(train)
+  
+  train_mape_percent_two = get_mape_percentage(train_predict)
+  test_predict <- make_baseline_prediction(Random_Forest, test)
+  rm(test)
+  
+  test_mape_percent_two = get_mape_percentage(test_predict)
+  
+  # Append outcomes to a dataframe
+  total_train_len = zero_train_len + one_train_len + two_train_len
+  total_test_len = zero_test_len + one_test_len + two_test_len
+  
+  total_train_mape = ((zero_train_len / total_train_len) * train_mape_percent_zero) +
+    ((one_train_len / total_train_len) * train_mape_percent_one) +
+    ((two_train_len / total_train_len) * train_mape_percent_two)
+  
+  total_test_mape = ((zero_test_len / total_test_len) * test_mape_percent_zero) +
+    ((one_test_len / total_test_len) * test_mape_percent_one) +
+    ((two_test_len / total_test_len) * test_mape_percent_two)
+  
+  result_mapes[x,] <- c(train_mape_percent_zero, train_mape_percent_one, train_mape_percent_two, test_mape_percent_zero, test_mape_percent_one, test_mape_percent_two, total_train_mape, total_test_mape, COUNT_THRESH + 1)
 
-model_data <- left_join(working_set, hospitals_msa, by = "msa")  %>%
-  select(-priv_pay_mean, -priv_pay_iqr, -mcare_pay_mean, -mcare_pay_sd, -Urban, -msa)
-rm(working_set)
+}
+# Report outcome
 
-predict_data <- left_join(predict_set, hospitals_msa, by = "msa")  %>%
-  select(-priv_pay_mean, -priv_pay_iqr, -mcare_pay_mean, -mcare_pay_sd, -Urban, -msa)
-rm(predict_set)
+#cat("With Threshold >", COUNT_THRESH, " claims for training set:\n")
+#cat("Train MAPE (zero):" , round(train_mape_percent_zero, 2), "%\n")
+#cat("Test MAPE (zero):" , round(test_mape_percent_zero, 2), "%\n")
+#cat("Train MAPE (one):" , round(train_mape_percent_one, 2), "%\n")
+#cat("Test MAPE (one):" , round(test_mape_percent_one, 2), "%\n")
+#cat("Train MAPE (two):" , round(train_mape_percent_two, 2), "%\n")
+#cat("Test MAPE (two):" , round(test_mape_percent_two, 2), "%\n\n")
 
-# Train test split
-train_test_data <- model_data %>% train_test_split(proportion_train = 0.8)
-rm(model_data)
+#cat("Train MAPE (total):" , round(total_train_mape, 2), "%\n")
+#cat("Test MAPE (total):" , round(total_test_mape, 2), "%\n")
 
-train <- train_test_data[[1]]
-test <- train_test_data[[2]]
-
-```
-
-Model Creation and Prediction are now compartmentalized
-
-```{r, warning = FALSE, message = FALSE}
-# Random Forest model
-
-# Fit Random Forest Model on training data
-Random_Forest <- baseline_rdm_forest(data = train)
-
-train_predict <- make_baseline_prediction(Random_Forest, train)
-rm(train)
-
-train_mape_percent = get_mape_percentage(train_predict)
-```
-
-
-```{r, warning = FALSE, message = FALSE}
-varImpPlot(Random_Forest, bg = "aquamarine3")
-
-```
-
-
-```{r, warning = FALSE, message = FALSE}
-test_predict <- make_baseline_prediction(Random_Forest, test)
-rm(test)
-
-test_mape_percent = get_mape_percentage(test_predict)
-```
-
-```{r}
-cat("With Threshold >50 claims for training set:\n")
-cat("Train MAPE:" , round(train_mape_percent, 2), "%\n")
-cat("Test MAPE:" , round(test_mape_percent, 2), "%\n")
 ```
 
 
 ## Modeling with threshold 35 number of claims
 
-Will leave data import alone for now.
-
 ```{r, warning = FALSE, message = FALSE}
-data <- read.csv("priv_mcare_f_pay_2022Oct18.csv")
-hospital_data <- read.csv("Hospital_Master_Sheet.csv")
+for (x in (SAMPLE_SIZE + 1):(SAMPLE_SIZE * 2)){
+
+  COUNT_THRESH = 34
+  SEED = x
+  
+  
+  # Data split into model data and predict
+  split_dataset <- data %>% data_split(count_thresh = COUNT_THRESH)
+  working_set <- split_dataset[[1]]
+  predict_set <- split_dataset[[2]]
+  rm(split_dataset)
+  
+  model_data <- left_join(working_set, hospitals_msa, by = "msa")  %>%
+    select(-priv_pay_mean, -priv_pay_iqr, -mcare_pay_mean, -mcare_pay_sd, -Urban, -msa)
+  rm(working_set)
+  
+  predict_data <- left_join(predict_set, hospitals_msa, by = "msa")  %>%
+    select(-priv_pay_mean, -priv_pay_iqr, -mcare_pay_mean, -mcare_pay_sd, -Urban, -msa)
+  rm(predict_set)
+  
+  # Break up model by cluster
+  model_data_zero = model_data %>% left_join(cluster_zero, by = 'group') %>% filter(present == TRUE) %>% select(-present)
+  model_data_one = model_data %>% left_join(cluster_one, by = 'group') %>% filter(present == TRUE) %>% select(-present)
+  model_data_two = model_data %>% left_join(cluster_two, by = 'group') %>% filter(present == TRUE) %>% select(-present)
+  
+  # Cluster 0
+  
+  # Train test split
+  train_test_data <- model_data_zero %>% train_test_split(proportion_train = 0.8, seed = SEED)
+  rm(model_data)
+  
+  train <- train_test_data[[1]]
+  test <- train_test_data[[2]]
+  zero_train_len = nrow(train)
+  zero_test_len = nrow(test)
+  # Random Forest model
+  # Fit Random Forest Model on training data
+  Random_Forest <- baseline_rdm_forest(data = train)
+  
+  train_predict <- make_baseline_prediction(Random_Forest, train)
+  rm(train)
+  
+  train_mape_percent_zero = get_mape_percentage(train_predict)
+  test_predict <- make_baseline_prediction(Random_Forest, test)
+  rm(test)
+  
+  test_mape_percent_zero = get_mape_percentage(test_predict)
+  
+  # Cluster 1
+  
+  # Train test split
+  train_test_data <- model_data_one %>% train_test_split(proportion_train = 0.8, seed = SEED)
+  rm(model_data)
+  
+  train <- train_test_data[[1]]
+  test <- train_test_data[[2]]
+  one_train_len = nrow(train)
+  one_test_len = nrow(test)
+  # Random Forest model
+  # Fit Random Forest Model on training data
+  Random_Forest <- baseline_rdm_forest(data = train)
+  
+  train_predict <- make_baseline_prediction(Random_Forest, train)
+  rm(train)
+  
+  train_mape_percent_one = get_mape_percentage(train_predict)
+  test_predict <- make_baseline_prediction(Random_Forest, test)
+  rm(test)
+  
+  test_mape_percent_one = get_mape_percentage(test_predict)
+  
+  # Cluster 2
+  
+  # Train test split
+  train_test_data <- model_data_two %>% train_test_split(proportion_train = 0.8, seed = SEED)
+  rm(model_data)
+  
+  train <- train_test_data[[1]]
+  test <- train_test_data[[2]]
+  two_train_len = nrow(train)
+  two_test_len = nrow(test)
+  # Random Forest model
+  # Fit Random Forest Model on training data
+  Random_Forest <- baseline_rdm_forest(data = train)
+  
+  train_predict <- make_baseline_prediction(Random_Forest, train)
+  rm(train)
+  
+  train_mape_percent_two = get_mape_percentage(train_predict)
+  test_predict <- make_baseline_prediction(Random_Forest, test)
+  rm(test)
+  
+  test_mape_percent_two = get_mape_percentage(test_predict)
+  
+  # Append outcomes to a dataframe
+  total_train_len = zero_train_len + one_train_len + two_train_len
+  total_test_len = zero_test_len + one_test_len + two_test_len
+  
+  total_train_mape = ((zero_train_len / total_train_len) * train_mape_percent_zero) +
+    ((one_train_len / total_train_len) * train_mape_percent_one) +
+    ((two_train_len / total_train_len) * train_mape_percent_two)
+  
+  total_test_mape = ((zero_test_len / total_test_len) * test_mape_percent_zero) +
+    ((one_test_len / total_test_len) * test_mape_percent_one) +
+    ((two_test_len / total_test_len) * test_mape_percent_two)
+  
+  result_mapes[x,] <- c(train_mape_percent_zero, train_mape_percent_one, train_mape_percent_two, test_mape_percent_zero, test_mape_percent_one, test_mape_percent_two, total_train_mape, total_test_mape, COUNT_THRESH + 1)
+
+}
 ```
 
-Hospital data aggregation, data split, and data filtering are now compartmentalized
+## Calculate Metrics For plotting
 
-```{r, warning = FALSE, message = FALSE}
-# Hospital data aggregation - validated for sameness
-hospitals_msa <- hospital_data %>% aggregate_hospital_features()
-rm(hospital_data)
+```{r}
+fifty_records <- result_mapes %>% filter(threshold == 50)
+thirty_five_records <- result_mapes %>% filter(threshold == 35)
 
-# Data split into model data and predict - varies from original slightly
-split_dataset <- data %>% data_split(count_thresh = 34)
-working_set <- split_dataset[[1]]
-predict_set <- split_dataset[[2]]
+fifty_mean_train <- mean(fifty_records$train_mapes_total)
+fifty_mean_test <- mean(fifty_records$test_mapes_total)
+fifty_sd_train <- sd(fifty_records$train_mapes_total)
+fifty_sd_test <- sd(fifty_records$test_mapes_total)
 
-model_data <- left_join(working_set, hospitals_msa, by = "msa")  %>%
-  select(-priv_pay_mean, -priv_pay_iqr, -mcare_pay_mean, -mcare_pay_sd, -Urban, -msa)
-rm(working_set)
+thirty_five_mean_train <- mean(thirty_five_records$train_mapes_total)
+thirty_five_mean_test <- mean(thirty_five_records$test_mapes_total)
+thirty_five_sd_train <- sd(thirty_five_records$train_mapes_total)
+thirty_five_sd_test <- sd(thirty_five_records$test_mapes_total)
 
-predict_data <- left_join(predict_set, hospitals_msa, by = "msa")  %>%
-  select(-priv_pay_mean, -priv_pay_iqr, -mcare_pay_mean, -mcare_pay_sd, -Urban, -msa)
-rm(predict_set)
-
-# Train test split
-train_test_data <- model_data %>% train_test_split(proportion_train = 0.8)
-rm(model_data)
-
-train <- train_test_data[[1]]
-test <- train_test_data[[2]]
-
+# Construct Dataframe
+summary_stats <- data.frame(mean=c(fifty_mean_test,thirty_five_mean_test,fifty_mean_train,thirty_five_mean_train),
+                            sd=c(fifty_sd_test,thirty_five_sd_test,fifty_sd_train,thirty_five_sd_train),
+                            Category=as.factor(c("50 (test)","35 (test)","50 (train)","35 (train)")))
 ```
 
-Model Creation and Prediction are now compartmentalized
+## Visualization
 
-```{r, warning = FALSE, message = FALSE}
-# Random Forest model
-
-# Fit Random Forest Model on training data
-Random_Forest <- baseline_rdm_forest(data = train)
-
-train_predict <- make_baseline_prediction(Random_Forest, train)
-rm(train)
-
-train_mape_percent = get_mape_percentage(train_predict)
-```
-
-
-```{r, warning = FALSE, message = FALSE}
-varImpPlot(Random_Forest, bg = "aquamarine3")
-
-```
-
-
-```{r, warning = FALSE, message = FALSE}
-test_predict <- make_baseline_prediction(Random_Forest, test)
-rm(test)
-
-test_mape_percent = get_mape_percentage(test_predict)
+```{r}
+ggplot(data = summary_stats %>% filter(mean < 20)) + 
+  geom_boxplot(aes(x = Category, lower = mean-sd, upper = mean+sd, middle = mean, ymin = mean - 3*sd, ymax = mean + 3*sd),stat="identity") +
+  ggtitle("Boxplots of Training data MAPE - 1000 samples each") +
+  ylab("MAPE")
 ```
 
 ```{r}
-cat("With Threshold >35 claims for training set:\n")
-cat("Train MAPE:" , round(train_mape_percent, 2), "%\n")
-cat("Test MAPE:" , round(test_mape_percent, 2), "%\n")
+ggplot(data = summary_stats %>% filter(mean > 20)) + 
+  geom_boxplot(aes(x = Category, lower = mean-sd, upper = mean+sd, middle = mean, ymin = mean - 3*sd, ymax = mean + 3*sd),stat="identity") +
+  ggtitle("Boxplots of Test data MAPE - 1000 samples each") +
+  ylab("MAPE")
 ```
+
+## Hypothesis Testing
+
+```{r}
+t.test(x = (result_mapes %>% filter(threshold == 50))$test_mapes_total,
+       y = (result_mapes %>% filter(threshold == 35))$test_mapes_total,
+       alternative = "greater")
+```
+
