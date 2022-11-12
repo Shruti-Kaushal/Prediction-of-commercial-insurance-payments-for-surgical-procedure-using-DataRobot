@@ -12,7 +12,7 @@ def data_split(data, count_col_name = 'priv_count', count_thresh = 50):
     model_data (pandas: DataFrame) - data frame with observations that will be used to train and test model
     future_data (pandas: DataFrame) - data frame with all observations on which model will make predictions
     """
-    data = data[(data['priv_pay_mean'] > 0) | (data['priv_pay_mean'].isnull())]
+    data = data[(data['priv_pay_mean'] > 0) | (data['priv_pay_mean'].notnull())]
     future_data = data[(data[count_col_name] <= count_thresh) | (data[count_col_name].isnull())]
     model_data = data[data[count_col_name] > count_thresh]
     return model_data, future_data
