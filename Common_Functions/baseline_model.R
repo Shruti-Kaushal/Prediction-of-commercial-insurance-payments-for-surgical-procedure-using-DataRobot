@@ -16,7 +16,8 @@ baseline_rdm_forest <- function(data, seed = 123){
     num.trees = 500,
     mtry = 7,
     nodesize = 20,
-    na.action = na.omit
+    na.action = na.omit,
+    importance = TRUE
   )
   return(Random_Forest)
 }

@@ -1,0 +1,94 @@
+---
+title: "Threshold Testing - Performance on unseen groups"
+author: "Ryan Rogers"
+date: "11/7/2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(randomForest)
+library(MLmetrics)
+source(file = "../../Common_Functions/processing_functions.R") # import of data_split transformation
+source(file = "../../Common_Functions/baseline_model.R") # import of baseline model
+```
+
+## Modeling with threshold 35 number of claims
+
+```{r, warning = FALSE, message = FALSE}
+data <- read.csv("../../Data_Files/JnJ_Files/priv_mcare_f_pay_2022Oct18.csv")
+hospital_data <- read.csv("../../Data_Files/JnJ_Files/Hospital_Master_Sheet.csv")
+```
+
+Hospital data aggregation, data split, and data filtering are now compartmentalized
+```{r}
+COUNT_THRESH = 34
+```
+
+
+
+```{r, warning = FALSE, message = FALSE}
+# Hospital data aggregation - validated for sameness
+hospitals_msa <- hospital_data %>% aggregate_hospital_features()
+rm(hospital_data)
+
+# Data split into model data and predict - varies from original slightly
+split_dataset <- data %>% data_split(count_thresh = COUNT_THRESH)
+working_set <- split_dataset[[1]]
+predict_set <- split_dataset[[2]]
+
+model_data <- left_join(working_set, hospitals_msa, by = "msa")  %>%
+  select(-priv_pay_mean, -priv_pay_iqr, -mcare_pay_mean, -mcare_pay_sd, -Urban, -msa)
+rm(working_set)
+
+predict_data <- left_join(predict_set, hospitals_msa, by = "msa")  %>%
+  select(-priv_pay_mean, -priv_pay_iqr, -mcare_pay_mean, -mcare_pay_sd, -Urban, -msa)
+rm(predict_set)
+
+# Train test split
+train_test_data <- model_data %>% train_test_split(proportion_train = 0.8)
+rm(model_data)
+
+train <- train_test_data[[1]]
+test <- train_test_data[[2]]
+
+```
+
+Model Creation and Prediction are now compartmentalized
+
+```{r, warning = FALSE, message = FALSE}
+# Random Forest model
+
+# Fit Random Forest Model on training data
+Random_Forest <- baseline_rdm_forest(data = train)
+
+train_predict <- make_baseline_prediction(Random_Forest, train)
+
+train_mape_percent = get_mape_percentage(train_predict)
+```
+
+
+```{r, warning = FALSE, message = FALSE}
+varImpPlot(Random_Forest, bg = "aquamarine3")
+
+```
+
+```{r}
+train_groups <- train %>% select(CBSA_NAME) %>% distinct()
+train_groups$present_in_train = TRUE
+test_seen_groups <- test %>% left_join(train_groups, by = 'CBSA_NAME')# %>% filter(present_in_train == TRUE)
+```
+
+
+```{r, warning = FALSE, message = FALSE}
+test_predict <- make_baseline_prediction(Random_Forest, test)
+
+test_mape_percent = get_mape_percentage(test_predict)
+```
+
+```{r}
+cat("With Threshold >", COUNT_THRESH, " claims for training set:\n")
+cat("Train MAPE:" , round(train_mape_percent, 2), "%\n")
+cat("Test MAPE:" , round(test_mape_percent, 2), "%\n")
+```
