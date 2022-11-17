@@ -2,3 +2,7 @@
 /gitignore
 /.ipynb_checkpoints/Distribution_Analysis-checkpoint.ipynb
 /Common_Functions/__pycache__/
+/Model_Building/Param-Tuning/.ipynb_checkpoints/Param_Tuning_LightGBM-checkpoint.ipynb
+/Model_Building/Param-Tuning/.ipynb_checkpoints/Clustered_Data-checkpoint.ipynb
+/Model_Building/Param-Tuning/.ipynb_checkpoints/Clustered_Data_RF-checkpoint.ipynb
+/Model_Building/Param-Tuning/.ipynb_checkpoints/Clustered_Data_XGBoost-checkpoint.ipynb
