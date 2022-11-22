@@ -5,7 +5,8 @@ def optimal_k(data):
     TRAIN_TEST_PROPORTION = 0.8
     train_mape = []
     test_mape = []
-    from KNN_function import knn_func
+    # from KNN_function import knn_func
+    import knn_func
     import numpy as np
     from sklearn.model_selection import train_test_split
     from sklearn.ensemble import RandomForestRegressor
