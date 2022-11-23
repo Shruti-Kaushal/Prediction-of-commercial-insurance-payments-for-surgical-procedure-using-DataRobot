@@ -3,7 +3,7 @@ data_split <- function(data, count_col_name = 'priv_count', count_thresh = 50) {
   # train, evaluate test the model. Future data is what the model needs to predict on.
   # 
   # Args:
-  # data (data frame) - a data frame with at least 3 columns - "priv_pay_mean", "priv_pay_median" 
+  # data (data frame) - a data frame with at least 2 columns - "priv_pay_median" 
   # and count_col_name
   # count_col_name (str) - name of the column which is thresholded to make the split
   # count_thresh (int) - threshold value used to split data on count_col_name
@@ -14,7 +14,7 @@ data_split <- function(data, count_col_name = 'priv_count', count_thresh = 50) {
   # future_data (data frame) - data frame with all observations on which model will make predictions 
   
   library(dplyr)
-  data <- filter(data, data$priv_pay_mean >=0  | is.na(data$priv_pay_mean))
+  data <- filter(data, data$priv_pay_median >=0  | is.na(data$priv_pay_mean))
   future_data <- filter(data, data[count_col_name] <= count_thresh | is.na(data[count_col_name]))
   model_data <- filter(data, data[count_col_name] > count_thresh)
   return(list(model_data, future_data))
