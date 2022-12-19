@@ -1,0 +1,179 @@
+---
+title: "Feature Testing - Income per capita & S0102 data"
+author: "Parv"
+date: '2022-10-19'
+output: pdf_document
+---
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(corrr)
+```
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+df <- read.csv("FeatureTestingIncomeS0102.csv")
+df <- subset(df, select = -c(X))
+```
+
+
+# Correlations
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE, fig.height=7, fig.width=7}
+res.cor <- correlate(df)
+res.cor %>% rplot()  +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE, fig.height=7, fig.width=7}
+res.cor %>%
+  #rearrange(method = "MDS", absolute = FALSE) %>%
+  shave() %>% 
+  rplot(shape = 15, colours = c("red", "grey", "green"))  +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+
+# Scatterplots
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+data_ = df %>% 
+  select(where(is.numeric))
+
+data_ = data_%>% 
+  select(5, 18:ncol(data_))
+```
+
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+sct_plot_function <- function(dataset = data_, target_x = data_$priv_pay_median, target_y_num){
+
+  ggplot(dataset, aes(x = target_x, y = data_[,target_y_num])) +
+    geom_point() + 
+    theme_bw() +
+    labs(title = paste("Scatter plot of Private Payout Median (MSA level) Vs ", colnames(data_)[target_y_num]), y = colnames(data_)[target_y_num], x = "Private Payout Median (MSA level)") +
+    theme(plot.title = element_text(hjust = 0.5)) 
+}
+```
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+par(mfrow=c(3,5))
+for(i in 2:(dim(data_)[2])){
+        plot(sct_plot_function(target_y_num = i))
+}
+par(mfrow=c(1,1))
+```
+
+# LinReg Coefficients
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+# model = lm(priv_pay_median ~ ., data = df %>% select(-c(Urban)))
+# summary(model)
+```
+
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+# model_new_featuers = lm(priv_pay_median ~ ., data = data_)
+# summary(model_new_featuers)
+```
+
+
+# Correlations by group
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+df_group = df %>% 
+  group_by(group) %>% 
+  summarise(priv_pay_median = median(priv_pay_median, na.rm = T),
+            mcare_pay_median = median(mcare_pay_median,na.rm = T),
+            income_pc = mean(income_pc, na.rm = T),
+            num_races = mean(num_races, na.rm = T),
+            household_size = mean(household_size, na.rm = T),
+            frac_married = mean(frac_married, na.rm = T),
+            frac_school = mean(frac_school, na.rm = T),
+            frac_college = mean(frac_college, na.rm = T),
+            frac_educated = mean(frac_educated, na.rm = T),
+            frac_veteran = mean(frac_veteran, na.rm = T),
+            frac_disability = mean(frac_disability, na.rm = T),
+            non_citizen = mean(non_citizen, na.rm = T),
+            employment_rate = mean(employment_rate, na.rm = T),
+            frac_priv_insurance = mean(frac_priv_insurance, na.rm = T),
+            frac_mcare_insurance = mean(frac_mcare_insurance, na.rm = T),
+            frac_no_insurance = mean(frac_no_insurance, na.rm = T),
+            poverty_rate = mean(poverty_rate, na.rm = T))# %>% 
+  # ungroup() %>% 
+  # select(-group)
+```
+
+
+# Plots of variables by group
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE, fig.height=7, fig.width=7}
+# res.cor <- correlate(df_group)
+# res.cor %>% rplot()  +
+#   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE, fig.height=7, fig.width=7}
+# res.cor %>%
+#   #rearrange(method = "MDS", absolute = FALSE) %>%
+#   shave() %>% 
+#   rplot(shape = 15, colours = c("red", "grey", "green"))  +
+#   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+
+
+
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE, fig.height=5, fig.width=14}
+for(i in colnames(df_group)[3:18]){
+  plt <- ggplot(data = df_group, aes_string(x = i, y = "priv_pay_median", color = "group")) +
+    geom_point() +
+    #geom_point(color = "pink") +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+  print(plt)
+}
+
+
+# ggplot(data = df_group, aes(x = group, y = income_pc)) +
+#   geom_point() +
+#   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+
+<!---
+# Correlations by group
+
+```{r}
+cor(as.data.frame(split(df_group[,2:18], df_group$group)), use = "pairwise.complete.obs")
+
+#lapply(split(df_group[,2:18], df_group$group), cor(use = "complete.obs"))
+#cor(df_group %>% select(-group), use = "complete.obs")
+```
+
+
+```{r}
+# df_group %>% 
+#   group_by(group) %>% 
+#   do(data.frame(Cor=t(cor(.[,3:18], .[,2], method = "pearson", use = "pairwise.complete.obs"))))
+  # summarise(mcare_pay_median = cor(priv_pay_median, mcare_pay_median),
+  #           income_pc = cor(priv_pay_median, income_pc),
+  #           num_races = cor(priv_pay_median, num_races),
+  #           household_size = cor(priv_pay_median, household_size),
+  #           frac_married = cor(priv_pay_median, frac_married),
+  #           frac_school = cor(priv_pay_median, frac_school),
+  #           frac_college = cor(priv_pay_median, frac_college),
+  #           frac_educated = cor(priv_pay_median, frac_educated),
+  #           frac_veteran = cor(priv_pay_median, frac_veteran),
+  #           frac_disability = cor(priv_pay_median, frac_disability),
+  #           non_citizen = cor(priv_pay_median, non_citizen),
+  #           employment_rate = cor(priv_pay_median, employment_rate),
+  #           frac_priv_insurance = cor(priv_pay_median, frac_priv_insurance),
+  #           frac_mcare_insurance = cor(priv_pay_median, frac_mcare_insurance),
+  #           frac_no_insurance = cor(priv_pay_median, frac_no_insurance),
+  #           poverty_rate = cor(priv_pay_median, poverty_rate))
+```
+
+-->
+
+
+
+
